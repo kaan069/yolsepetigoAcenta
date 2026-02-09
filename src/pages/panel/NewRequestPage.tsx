@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   Typography, Card, CardContent, Box, TextField, Button, Alert,
-  MenuItem, IconButton, Tooltip, Chip, CircularProgress,
+  MenuItem, IconButton, Tooltip, CircularProgress,
 } from '@mui/material';
-import { ContentCopy, MyLocation, LocationOn, Close, Route as RouteIcon } from '@mui/icons-material';
+import { ContentCopy, MyLocation, LocationOn, Close } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { createInsuranceRequest } from '../../api';
@@ -20,7 +20,6 @@ export default function NewRequestPage() {
     insured_phone: '',
     insured_plate: '',
     policy_number: '',
-    external_reference: '',
     pickup_address: '',
     pickup_latitude: 0,
     pickup_longitude: 0,
@@ -78,7 +77,6 @@ export default function NewRequestPage() {
         pickup_latitude: loc.latitude,
         pickup_longitude: loc.longitude,
       };
-      // Eger birakis konumu zaten seciliyse mesafe hesapla
       if (updated.dropoff_latitude && updated.dropoff_longitude) {
         calculateDistance(
           { lat: loc.latitude, lng: loc.longitude },
@@ -97,7 +95,6 @@ export default function NewRequestPage() {
         dropoff_latitude: loc.latitude,
         dropoff_longitude: loc.longitude,
       };
-      // Alis konumu varsa mesafe hesapla
       if (updated.pickup_latitude && updated.pickup_longitude) {
         calculateDistance(
           { lat: updated.pickup_latitude, lng: updated.pickup_longitude },
@@ -146,7 +143,6 @@ export default function NewRequestPage() {
         pickup_longitude: form.pickup_longitude,
       };
       if (form.insured_plate) payload.insured_plate = form.insured_plate;
-      if (form.external_reference) payload.external_reference = form.external_reference;
       if (form.dropoff_address) payload.dropoff_address = form.dropoff_address;
       if (form.dropoff_latitude) payload.dropoff_latitude = form.dropoff_latitude;
       if (form.dropoff_longitude) payload.dropoff_longitude = form.dropoff_longitude;
@@ -175,7 +171,6 @@ export default function NewRequestPage() {
       insured_phone: '',
       insured_plate: '',
       policy_number: '',
-      external_reference: '',
       pickup_address: '',
       pickup_latitude: 0,
       pickup_longitude: 0,
@@ -260,7 +255,6 @@ export default function NewRequestPage() {
               <TextField fullWidth label="Sigortali Telefon *" value={form.insured_phone} onChange={handleChange('insured_phone')} />
               <TextField fullWidth label="Plaka" value={form.insured_plate} onChange={handleChange('insured_plate')} />
               <TextField fullWidth label="Police Numarasi *" value={form.policy_number} onChange={handleChange('policy_number')} />
-              <TextField fullWidth label="Harici Referans" value={form.external_reference} onChange={handleChange('external_reference')} sx={{ gridColumn: { sm: '1 / -1' } }} />
             </Box>
 
             <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5, mt: 1 }}>Alis Konumu</Typography>
@@ -391,32 +385,26 @@ export default function NewRequestPage() {
               title="Birakis Konumu Sec"
             />
 
-            {/* Mesafe ve Detaylar */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
-              <TextField
-                fullWidth
-                label="Tahmini KM"
-                type="number"
-                value={form.estimated_km || ''}
-                onChange={handleChange('estimated_km')}
-                slotProps={{
-                  input: {
-                    endAdornment: distanceLoading ? (
-                      <CircularProgress size={18} sx={{ mr: 1 }} />
-                    ) : form.estimated_km && form.dropoff_address ? (
-                      <Chip
-                        icon={<RouteIcon sx={{ fontSize: 14 }} />}
-                        label="Otomatik"
-                        size="small"
-                        sx={{ fontSize: 11, height: 22, bgcolor: '#f0f9ff', color: '#0ea5e9' }}
-                      />
-                    ) : null,
-                  },
-                }}
-                helperText={form.dropoff_address && form.estimated_km ? `${form.pickup_address?.split(',')[0]} → ${form.dropoff_address?.split(',')[0]}` : undefined}
-              />
-              <TextField fullWidth label="Hizmet Detaylari" value={form.service_details} onChange={handleChange('service_details')} multiline rows={2} sx={{ gridColumn: { sm: '1 / -1' } }} />
-            </Box>
+            {/* Mesafe bilgisi */}
+            {form.dropoff_address && (
+              <Box sx={{ mb: 2, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                {distanceLoading ? (
+                  <>
+                    <CircularProgress size={16} />
+                    <Typography sx={{ fontSize: 13, color: '#64748b' }}>Mesafe hesaplaniyor...</Typography>
+                  </>
+                ) : form.estimated_km ? (
+                  <Typography sx={{ fontSize: 13, color: '#0f172a' }}>
+                    <strong>{form.estimated_km} km</strong>
+                    <Typography component="span" sx={{ fontSize: 12, color: '#94a3b8', ml: 1 }}>
+                      {form.pickup_address?.split(',')[0]} → {form.dropoff_address?.split(',')[0]}
+                    </Typography>
+                  </Typography>
+                ) : null}
+              </Box>
+            )}
+
+            <TextField fullWidth label="Hizmet Detaylari" value={form.service_details} onChange={handleChange('service_details')} multiline rows={2} sx={{ mb: 3 }} />
 
             <Button fullWidth type="submit" variant="contained" size="large" disabled={loading}>
               {loading ? 'Olusturuluyor...' : 'Talep Olustur'}
