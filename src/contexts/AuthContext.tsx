@@ -6,9 +6,6 @@ export interface AuthUser {
   name: string;
   contact_person: string;
   contact_email: string;
-  apiKey: string;
-  is_approved: boolean;
-  is_active: boolean;
 }
 
 interface AuthContextType {
@@ -27,13 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    const storedApiKey = localStorage.getItem('apiKey');
-    if (storedUser && storedApiKey) {
+    const storedToken = localStorage.getItem('access_token');
+    if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
         localStorage.removeItem('user');
-        localStorage.removeItem('apiKey');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
       }
     }
     setIsLoading(false);
@@ -42,21 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await loginCompany({ email, password });
     const authUser: AuthUser = {
-      id: response.id,
-      name: response.name,
-      contact_person: response.contact_person,
-      contact_email: response.contact_email,
-      apiKey: response.api_key,
-      is_approved: response.is_approved,
-      is_active: response.is_active,
+      id: response.company.id,
+      name: response.company.name,
+      contact_person: response.company.contact_person,
+      contact_email: response.company.contact_email,
     };
-    localStorage.setItem('apiKey', response.api_key);
+    localStorage.setItem('access_token', response.tokens.access_token);
+    localStorage.setItem('refresh_token', response.tokens.refresh_token);
     localStorage.setItem('user', JSON.stringify(authUser));
     setUser(authUser);
   };
 
   const logout = () => {
-    localStorage.removeItem('apiKey');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
   };

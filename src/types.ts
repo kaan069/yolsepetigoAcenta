@@ -152,14 +152,32 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  id: number;
-  name: string;
-  contact_person: string;
-  contact_email: string;
-  api_key: string;
-  webhook_url: string | null;
-  is_approved: boolean;
-  is_active: boolean;
+  company: {
+    id: number;
+    name: string;
+    contact_person: string;
+    contact_email: string;
+  };
+  tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+  };
+  message: string;
+}
+
+export interface TokenRefreshPayload {
+  refresh_token: string;
+}
+
+export interface TokenRefreshResponse {
+  tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+  };
   message: string;
 }
 

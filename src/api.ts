@@ -6,6 +6,7 @@ import {
   RegisterResponse,
   LoginPayload,
   LoginResponse,
+  TokenRefreshResponse,
   CompanyProfile,
   InsuranceRequestCreatePayload,
   InsuranceRequestCreateResponse,
@@ -94,11 +95,85 @@ const insuranceApi = axios.create({
   },
 });
 
-const getApiKey = (): string => {
-  const key = localStorage.getItem('apiKey');
-  if (!key) throw new Error('API key bulunamadi');
-  return key;
+const getAccessToken = (): string => {
+  const token = localStorage.getItem('access_token');
+  if (!token) throw new Error('Access token bulunamadi');
+  return token;
 };
+
+const authHeader = () => ({
+  Authorization: `Bearer ${getAccessToken()}`,
+});
+
+// --- Token Refresh Interceptor ---
+
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+const processQueue = (error: unknown, token: string | null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
+insuranceApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          return insuranceApi(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshTokenStr = localStorage.getItem('refresh_token');
+      if (!refreshTokenStr) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        window.location.href = '/panel/login';
+        return Promise.reject(error);
+      }
+
+      try {
+        const { data } = await insuranceApi.post<TokenRefreshResponse>('/token/refresh/', {
+          refresh_token: refreshTokenStr,
+        });
+        const newAccessToken = data.tokens.access_token;
+        localStorage.setItem('access_token', newAccessToken);
+        localStorage.setItem('refresh_token', data.tokens.refresh_token);
+
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        processQueue(null, newAccessToken);
+        return insuranceApi(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        window.location.href = '/panel/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // --- Auth ---
 
@@ -112,18 +187,23 @@ export const loginCompany = async (payload: LoginPayload): Promise<LoginResponse
   return response.data;
 };
 
+export const refreshToken = async (refresh_token: string): Promise<TokenRefreshResponse> => {
+  const response = await insuranceApi.post('/token/refresh/', { refresh_token });
+  return response.data;
+};
+
 // --- Profil ---
 
 export const getProfile = async (): Promise<CompanyProfile> => {
   const response = await insuranceApi.get('/me/', {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
 
 export const updateWebhook = async (webhook_url: string): Promise<{ message: string; webhook_url: string }> => {
   const response = await insuranceApi.put('/me/', { webhook_url }, {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
@@ -132,7 +212,7 @@ export const updateWebhook = async (webhook_url: string): Promise<{ message: str
 
 export const createInsuranceRequest = async (payload: InsuranceRequestCreatePayload): Promise<InsuranceRequestCreateResponse> => {
   const response = await insuranceApi.post('/requests/create/', payload, {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
@@ -140,21 +220,21 @@ export const createInsuranceRequest = async (payload: InsuranceRequestCreatePayl
 export const listInsuranceRequests = async (params?: { status?: string; page?: number; page_size?: number }): Promise<InsuranceRequestListResponse> => {
   const response = await insuranceApi.get('/requests/', {
     params,
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
 
 export const getInsuranceRequest = async (requestId: number): Promise<InsuranceRequestDetail> => {
   const response = await insuranceApi.get(`/requests/${requestId}/`, {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
 
 export const cancelInsuranceRequest = async (requestId: number): Promise<CancelRequestResponse> => {
   const response = await insuranceApi.post(`/requests/${requestId}/cancel/`, {}, {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
@@ -163,7 +243,7 @@ export const cancelInsuranceRequest = async (requestId: number): Promise<CancelR
 
 export const estimatePrice = async (payload: PricingEstimatePayload): Promise<PricingEstimateResponse> => {
   const response = await insuranceApi.post('/pricing/estimate/', payload, {
-    headers: { 'X-API-Key': getApiKey() },
+    headers: authHeader(),
   });
   return response.data;
 };
