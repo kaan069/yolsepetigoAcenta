@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Typography, Card, CardContent, Box, TextField, Button, Alert,
-  MenuItem, IconButton, Tooltip,
+  MenuItem, IconButton, Tooltip, Chip, CircularProgress,
 } from '@mui/material';
-import { ContentCopy, MyLocation, LocationOn, Close } from '@mui/icons-material';
+import { ContentCopy, MyLocation, LocationOn, Close, Route as RouteIcon } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
+import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { createInsuranceRequest } from '../../api';
 import { ServiceType, ServiceTypeLabels } from '../../types';
 import type { ServiceTypeValue, InsuranceRequestCreatePayload, InsuranceRequestCreateResponse } from '../../types';
@@ -35,23 +36,76 @@ export default function NewRequestPage() {
   const [copied, setCopied] = useState(false);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
   const [dropoffDialogOpen, setDropoffDialogOpen] = useState(false);
+  const [distanceLoading, setDistanceLoading] = useState(false);
+
+  const routesLib = useMapsLibrary('routes');
+
+  const calculateDistance = useCallback((
+    pickup: { lat: number; lng: number },
+    dropoff: { lat: number; lng: number },
+  ) => {
+    if (!routesLib) return;
+    setDistanceLoading(true);
+    const service = new routesLib.DistanceMatrixService();
+    service.getDistanceMatrix(
+      {
+        origins: [pickup],
+        destinations: [dropoff],
+        travelMode: google.maps.TravelMode.DRIVING,
+        unitSystem: google.maps.UnitSystem.METRIC,
+      },
+      (
+        response: google.maps.DistanceMatrixResponse | null,
+        status: google.maps.DistanceMatrixStatus,
+      ) => {
+        setDistanceLoading(false);
+        if (status === google.maps.DistanceMatrixStatus.OK && response) {
+          const element = response.rows[0]?.elements[0];
+          if (element?.status === google.maps.DistanceMatrixElementStatus.OK) {
+            const km = Math.round(element.distance.value / 1000);
+            setForm((prev) => ({ ...prev, estimated_km: km }));
+          }
+        }
+      }
+    );
+  }, [routesLib]);
 
   const handlePickupLocationSelect = (loc: LocationResult) => {
-    setForm((prev) => ({
-      ...prev,
-      pickup_address: loc.address,
-      pickup_latitude: loc.latitude,
-      pickup_longitude: loc.longitude,
-    }));
+    setForm((prev) => {
+      const updated = {
+        ...prev,
+        pickup_address: loc.address,
+        pickup_latitude: loc.latitude,
+        pickup_longitude: loc.longitude,
+      };
+      // Eger birakis konumu zaten seciliyse mesafe hesapla
+      if (updated.dropoff_latitude && updated.dropoff_longitude) {
+        calculateDistance(
+          { lat: loc.latitude, lng: loc.longitude },
+          { lat: updated.dropoff_latitude, lng: updated.dropoff_longitude },
+        );
+      }
+      return updated;
+    });
   };
 
   const handleDropoffLocationSelect = (loc: LocationResult) => {
-    setForm((prev) => ({
-      ...prev,
-      dropoff_address: loc.address,
-      dropoff_latitude: loc.latitude,
-      dropoff_longitude: loc.longitude,
-    }));
+    setForm((prev) => {
+      const updated = {
+        ...prev,
+        dropoff_address: loc.address,
+        dropoff_latitude: loc.latitude,
+        dropoff_longitude: loc.longitude,
+      };
+      // Alis konumu varsa mesafe hesapla
+      if (updated.pickup_latitude && updated.pickup_longitude) {
+        calculateDistance(
+          { lat: updated.pickup_latitude, lng: updated.pickup_longitude },
+          { lat: loc.latitude, lng: loc.longitude },
+        );
+      }
+      return updated;
+    });
   };
 
   const clearDropoffLocation = () => {
@@ -60,6 +114,7 @@ export default function NewRequestPage() {
       dropoff_address: '',
       dropoff_latitude: 0,
       dropoff_longitude: 0,
+      estimated_km: 0,
     }));
   };
 
@@ -217,26 +272,40 @@ export default function NewRequestPage() {
                 borderColor: form.pickup_address ? '#0ea5e9' : '#e2e8f0',
                 borderRadius: 2, cursor: 'pointer',
                 bgcolor: form.pickup_address ? '#f0f9ff' : 'transparent',
-                display: 'flex', alignItems: 'center', gap: 1.5,
+                display: 'flex', alignItems: 'flex-start', gap: 1.5,
                 transition: 'all 0.2s ease',
                 '&:hover': { borderColor: '#0ea5e9', bgcolor: '#f0f9ff' },
               }}
             >
-              <MyLocation sx={{ color: form.pickup_address ? '#0ea5e9' : '#94a3b8', fontSize: 22 }} />
+              <Box sx={{
+                width: 40, height: 40, borderRadius: 2, flexShrink: 0, mt: 0.25,
+                bgcolor: form.pickup_address ? '#0ea5e9' : '#f1f5f9',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <MyLocation sx={{ color: form.pickup_address ? 'white' : '#94a3b8', fontSize: 20 }} />
+              </Box>
               <Box sx={{ flex: 1 }}>
                 {form.pickup_address ? (
                   <>
-                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                      Alis Adresi
+                    </Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a', lineHeight: 1.4 }}>
                       {form.pickup_address}
                     </Typography>
-                    <Typography sx={{ fontSize: 11, color: '#64748b', mt: 0.25 }}>
-                      Enlem: {form.pickup_latitude.toFixed(6)} | Boylam: {form.pickup_longitude.toFixed(6)}
+                    <Typography sx={{ fontSize: 11, color: '#94a3b8', mt: 0.5, fontFamily: 'monospace' }}>
+                      {form.pickup_latitude.toFixed(6)}, {form.pickup_longitude.toFixed(6)}
                     </Typography>
                   </>
                 ) : (
-                  <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
-                    Alis konumunu secmek icin tiklayin *
-                  </Typography>
+                  <>
+                    <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
+                      Alis konumunu secmek icin tiklayin
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: '#cbd5e1', mt: 0.25 }}>
+                      Haritadan konum secin veya adres arayin
+                    </Typography>
+                  </>
                 )}
               </Box>
             </Box>
@@ -261,26 +330,40 @@ export default function NewRequestPage() {
                 borderColor: form.dropoff_address ? '#ef4444' : '#e2e8f0',
                 borderRadius: 2, cursor: 'pointer',
                 bgcolor: form.dropoff_address ? '#fef2f2' : 'transparent',
-                display: 'flex', alignItems: 'center', gap: 1.5,
+                display: 'flex', alignItems: 'flex-start', gap: 1.5,
                 transition: 'all 0.2s ease',
                 '&:hover': { borderColor: form.dropoff_address ? '#ef4444' : '#0ea5e9', bgcolor: form.dropoff_address ? '#fef2f2' : '#f0f9ff' },
               }}
             >
-              <LocationOn sx={{ color: form.dropoff_address ? '#ef4444' : '#94a3b8', fontSize: 22 }} />
+              <Box sx={{
+                width: 40, height: 40, borderRadius: 2, flexShrink: 0, mt: 0.25,
+                bgcolor: form.dropoff_address ? '#ef4444' : '#f1f5f9',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <LocationOn sx={{ color: form.dropoff_address ? 'white' : '#94a3b8', fontSize: 20 }} />
+              </Box>
               <Box sx={{ flex: 1 }}>
                 {form.dropoff_address ? (
                   <>
-                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                      Teslim Adresi
+                    </Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a', lineHeight: 1.4 }}>
                       {form.dropoff_address}
                     </Typography>
-                    <Typography sx={{ fontSize: 11, color: '#64748b', mt: 0.25 }}>
-                      Enlem: {(form.dropoff_latitude || 0).toFixed(6)} | Boylam: {(form.dropoff_longitude || 0).toFixed(6)}
+                    <Typography sx={{ fontSize: 11, color: '#94a3b8', mt: 0.5, fontFamily: 'monospace' }}>
+                      {(form.dropoff_latitude || 0).toFixed(6)}, {(form.dropoff_longitude || 0).toFixed(6)}
                     </Typography>
                   </>
                 ) : (
-                  <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
-                    Birakis konumunu secmek icin tiklayin (opsiyonel)
-                  </Typography>
+                  <>
+                    <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
+                      Birakis konumunu secmek icin tiklayin (opsiyonel)
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: '#cbd5e1', mt: 0.25 }}>
+                      Haritadan konum secin veya adres arayin
+                    </Typography>
+                  </>
                 )}
               </Box>
               {form.dropoff_address && (
@@ -290,7 +373,7 @@ export default function NewRequestPage() {
                     e.stopPropagation();
                     clearDropoffLocation();
                   }}
-                  sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }}
+                  sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' }, mt: 0.25 }}
                 >
                   <Close fontSize="small" />
                 </IconButton>
@@ -308,8 +391,30 @@ export default function NewRequestPage() {
               title="Birakis Konumu Sec"
             />
 
+            {/* Mesafe ve Detaylar */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
-              <TextField fullWidth label="Tahmini KM" type="number" value={form.estimated_km || ''} onChange={handleChange('estimated_km')} />
+              <TextField
+                fullWidth
+                label="Tahmini KM"
+                type="number"
+                value={form.estimated_km || ''}
+                onChange={handleChange('estimated_km')}
+                slotProps={{
+                  input: {
+                    endAdornment: distanceLoading ? (
+                      <CircularProgress size={18} sx={{ mr: 1 }} />
+                    ) : form.estimated_km && form.dropoff_address ? (
+                      <Chip
+                        icon={<RouteIcon sx={{ fontSize: 14 }} />}
+                        label="Otomatik"
+                        size="small"
+                        sx={{ fontSize: 11, height: 22, bgcolor: '#f0f9ff', color: '#0ea5e9' }}
+                      />
+                    ) : null,
+                  },
+                }}
+                helperText={form.dropoff_address && form.estimated_km ? `${form.pickup_address?.split(',')[0]} → ${form.dropoff_address?.split(',')[0]}` : undefined}
+              />
               <TextField fullWidth label="Hizmet Detaylari" value={form.service_details} onChange={handleChange('service_details')} multiline rows={2} sx={{ gridColumn: { sm: '1 / -1' } }} />
             </Box>
 
