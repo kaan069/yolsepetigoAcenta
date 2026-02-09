@@ -3,11 +3,12 @@ import {
   Typography, Card, CardContent, Box, TextField, Button, Alert,
   MenuItem, IconButton, Tooltip,
 } from '@mui/material';
-import { ContentCopy } from '@mui/icons-material';
+import { ContentCopy, MyLocation, LocationOn, Close } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { createInsuranceRequest } from '../../api';
 import { ServiceType, ServiceTypeLabels } from '../../types';
 import type { ServiceTypeValue, InsuranceRequestCreatePayload, InsuranceRequestCreateResponse } from '../../types';
+import MapPickerDialog, { type LocationResult } from '../../components/MapPickerDialog';
 
 const serviceTypeOptions = Object.entries(ServiceTypeLabels).map(([value, label]) => ({ value, label }));
 
@@ -32,6 +33,35 @@ export default function NewRequestPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<InsuranceRequestCreateResponse | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
+  const [dropoffDialogOpen, setDropoffDialogOpen] = useState(false);
+
+  const handlePickupLocationSelect = (loc: LocationResult) => {
+    setForm((prev) => ({
+      ...prev,
+      pickup_address: loc.address,
+      pickup_latitude: loc.latitude,
+      pickup_longitude: loc.longitude,
+    }));
+  };
+
+  const handleDropoffLocationSelect = (loc: LocationResult) => {
+    setForm((prev) => ({
+      ...prev,
+      dropoff_address: loc.address,
+      dropoff_latitude: loc.latitude,
+      dropoff_longitude: loc.longitude,
+    }));
+  };
+
+  const clearDropoffLocation = () => {
+    setForm((prev) => ({
+      ...prev,
+      dropoff_address: '',
+      dropoff_latitude: 0,
+      dropoff_longitude: 0,
+    }));
+  };
 
   const handleChange = (field: keyof InsuranceRequestCreatePayload) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = ['pickup_latitude', 'pickup_longitude', 'dropoff_latitude', 'dropoff_longitude', 'estimated_km'].includes(field)
@@ -180,19 +210,103 @@ export default function NewRequestPage() {
 
             <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5, mt: 1 }}>Alis Konumu</Typography>
 
-            <TextField fullWidth label="Alis Adresi *" value={form.pickup_address} onChange={handleChange('pickup_address')} sx={{ mb: 2 }} />
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-              <TextField fullWidth label="Enlem *" type="number" value={form.pickup_latitude || ''} onChange={handleChange('pickup_latitude')} />
-              <TextField fullWidth label="Boylam *" type="number" value={form.pickup_longitude || ''} onChange={handleChange('pickup_longitude')} />
+            <Box
+              onClick={() => setPickupDialogOpen(true)}
+              sx={{
+                mb: 2, p: 2, border: '1px solid',
+                borderColor: form.pickup_address ? '#0ea5e9' : '#e2e8f0',
+                borderRadius: 2, cursor: 'pointer',
+                bgcolor: form.pickup_address ? '#f0f9ff' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                transition: 'all 0.2s ease',
+                '&:hover': { borderColor: '#0ea5e9', bgcolor: '#f0f9ff' },
+              }}
+            >
+              <MyLocation sx={{ color: form.pickup_address ? '#0ea5e9' : '#94a3b8', fontSize: 22 }} />
+              <Box sx={{ flex: 1 }}>
+                {form.pickup_address ? (
+                  <>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                      {form.pickup_address}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: '#64748b', mt: 0.25 }}>
+                      Enlem: {form.pickup_latitude.toFixed(6)} | Boylam: {form.pickup_longitude.toFixed(6)}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
+                    Alis konumunu secmek icin tiklayin *
+                  </Typography>
+                )}
+              </Box>
             </Box>
+            <MapPickerDialog
+              open={pickupDialogOpen}
+              onClose={() => setPickupDialogOpen(false)}
+              onSelect={handlePickupLocationSelect}
+              initialLocation={
+                form.pickup_latitude !== 0
+                  ? { address: form.pickup_address, latitude: form.pickup_latitude, longitude: form.pickup_longitude }
+                  : null
+              }
+              title="Alis Konumu Sec"
+            />
 
             <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5, mt: 1 }}>Birakis Konumu (opsiyonel)</Typography>
 
-            <TextField fullWidth label="Birakis Adresi" value={form.dropoff_address} onChange={handleChange('dropoff_address')} sx={{ mb: 2 }} />
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-              <TextField fullWidth label="Enlem" type="number" value={form.dropoff_latitude || ''} onChange={handleChange('dropoff_latitude')} />
-              <TextField fullWidth label="Boylam" type="number" value={form.dropoff_longitude || ''} onChange={handleChange('dropoff_longitude')} />
+            <Box
+              onClick={() => setDropoffDialogOpen(true)}
+              sx={{
+                mb: 2, p: 2, border: '1px solid',
+                borderColor: form.dropoff_address ? '#ef4444' : '#e2e8f0',
+                borderRadius: 2, cursor: 'pointer',
+                bgcolor: form.dropoff_address ? '#fef2f2' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                transition: 'all 0.2s ease',
+                '&:hover': { borderColor: form.dropoff_address ? '#ef4444' : '#0ea5e9', bgcolor: form.dropoff_address ? '#fef2f2' : '#f0f9ff' },
+              }}
+            >
+              <LocationOn sx={{ color: form.dropoff_address ? '#ef4444' : '#94a3b8', fontSize: 22 }} />
+              <Box sx={{ flex: 1 }}>
+                {form.dropoff_address ? (
+                  <>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
+                      {form.dropoff_address}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: '#64748b', mt: 0.25 }}>
+                      Enlem: {(form.dropoff_latitude || 0).toFixed(6)} | Boylam: {(form.dropoff_longitude || 0).toFixed(6)}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
+                    Birakis konumunu secmek icin tiklayin (opsiyonel)
+                  </Typography>
+                )}
+              </Box>
+              {form.dropoff_address && (
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearDropoffLocation();
+                  }}
+                  sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              )}
             </Box>
+            <MapPickerDialog
+              open={dropoffDialogOpen}
+              onClose={() => setDropoffDialogOpen(false)}
+              onSelect={handleDropoffLocationSelect}
+              initialLocation={
+                form.dropoff_latitude && form.dropoff_latitude !== 0
+                  ? { address: form.dropoff_address || '', latitude: form.dropoff_latitude, longitude: form.dropoff_longitude || 0 }
+                  : null
+              }
+              title="Birakis Konumu Sec"
+            />
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
               <TextField fullWidth label="Tahmini KM" type="number" value={form.estimated_km || ''} onChange={handleChange('estimated_km')} />

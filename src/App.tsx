@@ -1,5 +1,6 @@
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Routes, Route } from 'react-router-dom';
+import { APIProvider } from '@vis.gl/react-google-maps';
 import { theme } from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 import PublicLayout from './layouts/PublicLayout';
@@ -16,6 +17,7 @@ import SettingsPage from './pages/panel/SettingsPage';
 
 function App() {
   return (
+    <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
@@ -41,6 +43,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </ThemeProvider>
+    </APIProvider>
   );
 }
 
