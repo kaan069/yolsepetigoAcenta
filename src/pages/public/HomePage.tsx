@@ -1,6 +1,6 @@
-import { Box, Typography, Container, Chip } from '@mui/material';
-import { LocalShipping, AccessTime, GpsFixed, Security } from '@mui/icons-material';
-import TowTruckRequestForm from '../../components/TowTruckRequestForm';
+import { Box, Typography, Container, Chip, Button, Card, CardContent } from '@mui/material';
+import { LocalShipping, AccessTime, GpsFixed, Security, Business, SupportAgent, Calculate, TrackChanges } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 
 export default function HomePage() {
   return (
@@ -11,7 +11,7 @@ export default function HomePage() {
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
           position: 'relative',
           overflow: 'hidden',
-          py: { xs: 6, md: 8 },
+          py: { xs: 8, md: 12 },
         }}
       >
         {/* Decorative circles */}
@@ -35,7 +35,7 @@ export default function HomePage() {
             />
             <Typography
               sx={{
-                fontSize: { xs: 32, md: 44 },
+                fontSize: { xs: 32, md: 48 },
                 fontWeight: 800,
                 color: 'white',
                 lineHeight: 1.2,
@@ -43,17 +43,58 @@ export default function HomePage() {
                 letterSpacing: -1,
               }}
             >
-              Cekici Ihtiyaciniz mi Var?{' '}
+              Turkiye'nin Lider{' '}
               <Box component="span" sx={{ background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Hemen Talep Olusturun
+                Yol Yardim Platformu
               </Box>
             </Typography>
-            <Typography sx={{ fontSize: { xs: 15, md: 17 }, color: '#94a3b8', maxWidth: 520, mx: 'auto', lineHeight: 1.6 }}>
-              YolSepetiGO ile dakikalar icinde cekici, vinc veya yol yardim hizmeti talep edin. Anlik takip ile aracinisin nerede oldugunu bilin.
+            <Typography sx={{ fontSize: { xs: 15, md: 17 }, color: '#94a3b8', maxWidth: 520, mx: 'auto', lineHeight: 1.7, mb: 5 }}>
+              YolSepetiGO ile dakikalar icinde cekici, vinc veya yol yardim hizmeti talep edin. Anlik takip ile aracinizin nerede oldugunu bilin.
             </Typography>
 
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                component={Link}
+                to="/panel/register"
+                variant="contained"
+                size="large"
+                sx={{
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  textTransform: 'none',
+                  borderRadius: 2.5,
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: '0 4px 20px rgba(14, 165, 233, 0.4)',
+                  '&:hover': { boxShadow: '0 6px 28px rgba(14, 165, 233, 0.5)' },
+                }}
+              >
+                Acenta Kaydi
+              </Button>
+              <Button
+                component={Link}
+                to="/panel/login"
+                variant="outlined"
+                size="large"
+                sx={{
+                  borderColor: 'rgba(148, 163, 184, 0.3)',
+                  color: '#cbd5e1',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  textTransform: 'none',
+                  borderRadius: 2.5,
+                  px: 4,
+                  py: 1.5,
+                  '&:hover': { borderColor: '#0ea5e9', color: '#0ea5e9', bgcolor: 'rgba(14,165,233,0.05)' },
+                }}
+              >
+                Giris Yap
+              </Button>
+            </Box>
+
             {/* Feature Pills */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 4, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, mt: 6, flexWrap: 'wrap' }}>
               {[
                 { icon: <AccessTime sx={{ fontSize: 18 }} />, text: 'Hizli Cevap' },
                 { icon: <GpsFixed sx={{ fontSize: 18 }} />, text: 'Anlik Takip' },
@@ -69,10 +110,74 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* Form Section */}
-      <Container maxWidth="md" sx={{ mt: -3, mb: 6, position: 'relative', zIndex: 2 }}>
-        <TowTruckRequestForm />
+      {/* Features Section */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Typography sx={{ fontSize: { xs: 24, md: 32 }, fontWeight: 700, color: '#0f172a', mb: 1.5 }}>
+            Neden YolSepetiGO?
+          </Typography>
+          <Typography sx={{ fontSize: 15, color: '#64748b', maxWidth: 500, mx: 'auto' }}>
+            Acentalar icin tasarlanmis, entegrasyonu kolay, guvenilir yol yardim altyapisi
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 3 }}>
+          {[
+            { icon: <LocalShipping sx={{ fontSize: 24 }} />, title: 'Cekici & Vinc', desc: 'Her turlu arac icin cekici ve vinc hizmeti' },
+            { icon: <SupportAgent sx={{ fontSize: 24 }} />, title: '7/24 Destek', desc: 'Kesintisiz musteri hizmetleri' },
+            { icon: <TrackChanges sx={{ fontSize: 24 }} />, title: 'Anlik Takip', desc: 'Arac ve sofor konumunu canli takip edin' },
+            { icon: <Calculate sx={{ fontSize: 24 }} />, title: 'Fiyat Hesaplama', desc: 'Aninda fiyat tahmini alin' },
+          ].map((feature) => (
+            <Card key={feature.title} sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #e2e8f0', transition: 'all 0.2s', '&:hover': { borderColor: '#0ea5e9', boxShadow: '0 4px 20px rgba(14,165,233,0.1)' } }}>
+              <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2, color: '#0ea5e9' }}>
+                  {feature.icon}
+                </Box>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#0f172a', mb: 0.5 }}>{feature.title}</Typography>
+                <Typography sx={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>{feature.desc}</Typography>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
       </Container>
+
+      {/* CTA Section */}
+      <Box sx={{ bgcolor: '#f8fafc', py: { xs: 6, md: 8 } }}>
+        <Container maxWidth="md">
+          <Card sx={{ borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <CardContent sx={{ p: { xs: 4, md: 6 }, textAlign: 'center' }}>
+              <Box sx={{ width: 56, height: 56, borderRadius: 3, bgcolor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
+                <Business sx={{ fontSize: 28, color: '#0ea5e9' }} />
+              </Box>
+              <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 700, color: '#0f172a', mb: 1.5 }}>
+                Acenta Olarak Kayit Olun
+              </Typography>
+              <Typography sx={{ fontSize: 15, color: '#64748b', maxWidth: 440, mx: 'auto', mb: 4, lineHeight: 1.6 }}>
+                Hemen kayit olun, API key'inizi alin ve taleplerinizi yonetmeye baslayin. Entegrasyon dakikalar icerisinde tamamlanir.
+              </Typography>
+              <Button
+                component={Link}
+                to="/panel/register"
+                variant="contained"
+                size="large"
+                sx={{
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  textTransform: 'none',
+                  borderRadius: 2.5,
+                  px: 5,
+                  py: 1.5,
+                  boxShadow: '0 4px 20px rgba(14, 165, 233, 0.35)',
+                  '&:hover': { boxShadow: '0 6px 28px rgba(14, 165, 233, 0.45)' },
+                }}
+              >
+                Ucretsiz Kayit Ol
+              </Button>
+            </CardContent>
+          </Card>
+        </Container>
+      </Box>
     </Box>
   );
 }

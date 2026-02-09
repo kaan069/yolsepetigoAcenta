@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   Dashboard, ListAlt, AddCircleOutline, Calculate, Settings, Logout,
-  Menu as MenuIcon, LocalShipping, ChevronLeft,
+  Menu as MenuIcon, ChevronLeft,
 } from '@mui/icons-material';
 import { Outlet, Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,13 +31,12 @@ export default function PanelLayout() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#f1f5f9' }}>
         <Box sx={{ textAlign: 'center' }}>
-          <Box sx={{
-            width: 56, height: 56, borderRadius: 3, mx: 'auto', mb: 2,
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <LocalShipping sx={{ color: 'white', fontSize: 28 }} />
-          </Box>
+          <Box
+            component="img"
+            src="/assets/goyazililogo.jpeg"
+            alt="YolSepetiGO"
+            sx={{ width: 56, height: 56, borderRadius: 3, mx: 'auto', mb: 2, objectFit: 'cover' }}
+          />
           <Typography color="text.secondary" sx={{ fontSize: 14 }}>Yukleniyor...</Typography>
         </Box>
       </Box>
@@ -58,15 +57,11 @@ export default function PanelLayout() {
       {/* Logo */}
       <Box sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box
-          sx={{
-            width: 38, height: 38, borderRadius: 2,
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.4)',
-          }}
-        >
-          <LocalShipping sx={{ color: 'white', fontSize: 20 }} />
-        </Box>
+          component="img"
+          src="/assets/goyazililogo.jpeg"
+          alt="YolSepetiGO"
+          sx={{ width: 38, height: 38, borderRadius: 2, objectFit: 'cover', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.4)' }}
+        />
         <Box sx={{ flex: 1 }}>
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: 'white', lineHeight: 1.2 }}>
             YolSepetiGO
@@ -187,13 +182,12 @@ export default function PanelLayout() {
                 <MenuIcon />
               </IconButton>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{
-                  width: 28, height: 28, borderRadius: 1,
-                  background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <LocalShipping sx={{ color: 'white', fontSize: 16 }} />
-                </Box>
+                <Box
+                  component="img"
+                  src="/assets/goyazililogo.jpeg"
+                  alt="YolSepetiGO"
+                  sx={{ width: 28, height: 28, borderRadius: 1, objectFit: 'cover' }}
+                />
                 <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: 15 }}>
                   YolSepetiGO
                 </Typography>

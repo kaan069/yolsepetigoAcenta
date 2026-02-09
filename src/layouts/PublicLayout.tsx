@@ -1,5 +1,5 @@
 import { Box, Typography, Button, Container } from '@mui/material';
-import { LocalShipping, Login } from '@mui/icons-material';
+import { Login } from '@mui/icons-material';
 import { Outlet, Link } from 'react-router-dom';
 
 export default function PublicLayout() {
@@ -22,19 +22,11 @@ export default function PublicLayout() {
             {/* Logo */}
             <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, textDecoration: 'none' }}>
               <Box
-                sx={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 14px rgba(14, 165, 233, 0.3)',
-                }}
-              >
-                <LocalShipping sx={{ color: 'white', fontSize: 22 }} />
-              </Box>
+                component="img"
+                src="/assets/goyazililogo.jpeg"
+                alt="YolSepetiGO"
+                sx={{ width: 42, height: 42, borderRadius: 2.5, objectFit: 'cover', boxShadow: '0 4px 14px rgba(14, 165, 233, 0.3)' }}
+              />
               <Box>
                 <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#0f172a', lineHeight: 1.2, letterSpacing: -0.5 }}>
                   YolSepetiGO
@@ -97,18 +89,11 @@ export default function PublicLayout() {
             <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: { xs: 'center', md: 'flex-start' }, mb: 1.5 }}>
                 <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <LocalShipping sx={{ color: 'white', fontSize: 18 }} />
-                </Box>
+                  component="img"
+                  src="/assets/goyazililogo.jpeg"
+                  alt="YolSepetiGO"
+                  sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
+                />
                 <Typography sx={{ fontSize: 18, fontWeight: 700, color: 'white' }}>
                   YolSepetiGO
                 </Typography>

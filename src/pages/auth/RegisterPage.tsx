@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Typography, TextField, Button, Alert, Link as MuiLink, InputAdornment, IconButton } from '@mui/material';
-import { LocalShipping, Business, Person, Email, Phone, Lock, Visibility, VisibilityOff, AccountBalance, LocationOn, Webhook } from '@mui/icons-material';
+import { Business, Person, Email, Phone, Lock, Visibility, VisibilityOff, AccountBalance, LocationOn, Webhook } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { registerCompany } from '../../api';
 import type { RegisterPayload } from '../../types';
@@ -87,14 +87,12 @@ export default function RegisterPage() {
         <Box sx={{ position: 'absolute', bottom: -120, left: -60, width: 400, height: 400, borderRadius: '50%', bgcolor: 'rgba(14, 165, 233, 0.05)' }} />
 
         <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 400 }}>
-          <Box sx={{
-            width: 72, height: 72, borderRadius: 3, mx: 'auto', mb: 3,
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(14, 165, 233, 0.3)',
-          }}>
-            <LocalShipping sx={{ color: 'white', fontSize: 36 }} />
-          </Box>
+          <Box
+            component="img"
+            src="/assets/goyazililogo.jpeg"
+            alt="YolSepetiGO"
+            sx={{ width: 72, height: 72, borderRadius: 3, mx: 'auto', mb: 3, objectFit: 'cover', boxShadow: '0 8px 32px rgba(14, 165, 233, 0.3)' }}
+          />
           <Typography sx={{ fontSize: 32, fontWeight: 800, color: 'white', mb: 1.5 }}>
             YolSepetiGO
           </Typography>
@@ -123,8 +121,9 @@ export default function RegisterPage() {
           flex: { xs: 1, lg: '0 0 560px' },
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          p: { xs: 3, sm: 5 },
+          justifyContent: { xs: 'flex-start', lg: 'center' },
+          p: { xs: 2.5, sm: 5 },
+          pt: { xs: 4, sm: 5 },
           bgcolor: 'white',
           overflow: 'auto',
           maxHeight: '100vh',
@@ -132,13 +131,12 @@ export default function RegisterPage() {
       >
         {/* Mobil logo */}
         <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 1.5, mb: 3, justifyContent: 'center' }}>
-          <Box sx={{
-            width: 40, height: 40, borderRadius: 2,
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <LocalShipping sx={{ color: 'white', fontSize: 22 }} />
-          </Box>
+          <Box
+            component="img"
+            src="/assets/goyazililogo.jpeg"
+            alt="YolSepetiGO"
+            sx={{ width: 40, height: 40, borderRadius: 2, objectFit: 'cover' }}
+          />
           <Typography sx={{ fontWeight: 700, fontSize: 20, color: '#0f172a' }}>YolSepetiGO</Typography>
         </Box>
 
