@@ -329,6 +329,76 @@ export interface AcceptOfferResponse {
   driver_phone: string;
 }
 
+// --- WebSocket Message Types ---
+
+export interface WsConnectionEstablished {
+  type: 'connection_established';
+  request_id: number;
+  tracking_token: string;
+  current_status: { status: string; service_type: string; estimated_price: number };
+  message: string;
+}
+
+export interface WsNewOffer {
+  type: 'new_offer';
+  request_id: number;
+  offer: {
+    id: number;
+    driver: { id: number; first_name: string; last_name: string; phone_number: string };
+    vehicle: { id: number; brand: string; model: string; plate_number: string } | null;
+    estimated_price: string;
+    estimated_duration: number;
+    status: string;
+    created_at: string;
+  };
+  message: string;
+}
+
+export interface WsOfferWithdrawn {
+  type: 'offer_withdrawn';
+  request_id: number;
+  offer_id: number;
+  message: string;
+}
+
+export interface WsOfferAccepted {
+  type: 'offer_accepted';
+  request_id: number;
+  status: string;
+  driver_name: string;
+  estimated_price: string;
+  message: string;
+}
+
+export interface WsRequestCompleted {
+  type: 'request_completed';
+  request_id: number;
+  status: string;
+  message: string;
+}
+
+export interface WsRequestCancelled {
+  type: 'request_cancelled';
+  request_id: number;
+  status: string;
+  reason: string;
+  message: string;
+}
+
+export interface WsPaymentCompleted {
+  type: 'payment_completed';
+  message: { request_id: number; status: string; message: string };
+}
+
+export type WsMessage =
+  | WsConnectionEstablished
+  | WsNewOffer
+  | WsOfferWithdrawn
+  | WsOfferAccepted
+  | WsRequestCompleted
+  | WsRequestCancelled
+  | WsPaymentCompleted;
+
 // --- Fiyatlandirma ---
 
 export interface PricingEstimatePayload {

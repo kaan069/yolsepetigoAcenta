@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Card, CardContent, Box, CircularProgress, Alert,
   Chip, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
@@ -6,15 +6,17 @@ import {
 } from '@mui/material';
 import {
   ArrowBack, ContentCopy, Person, Schedule, LocalShipping,
-  Star, CheckCircle, Cancel, Phone,
+  Star, CheckCircle, Cancel, Phone, Sms,
 } from '@mui/icons-material';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   getInsuranceRequest, getRequestOffers,
   cancelInsuranceRequest, acceptOffer as acceptOfferApi, extractTrackingToken,
+  sendPaymentSms,
 } from '../../api';
 import { ServiceTypeLabels, RequestStatusLabels, RequestStatusColors } from '../../types';
 import type { InsuranceRequestDetail, DriverOfferInfo, OffersResponse } from '../../types';
+import { useRequestWebSocket } from '../../hooks/useRequestWebSocket';
 
 // --- Animasyonlar ---
 
@@ -39,7 +41,7 @@ const formatPrice = (price: number) =>
   new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
 
 const ACTIVE_STATUSES = ['pending', 'awaiting_approval', 'awaiting_payment'];
-const POLL_INTERVAL = 5000;
+const TERMINAL_STATUSES = ['completed', 'cancelled'];
 
 // --- ElapsedTimer ---
 
@@ -203,7 +205,14 @@ function OffersView({
 
 // --- ActiveJobView ---
 
-function ActiveJobView({ request }: { request: InsuranceRequestDetail }) {
+function ActiveJobView({
+  request, onSendPaymentSms, sendingSms, smsSuccess,
+}: {
+  request: InsuranceRequestDetail;
+  onSendPaymentSms: () => void;
+  sendingSms: boolean;
+  smsSuccess: boolean;
+}) {
   const isPayment = request.status === 'awaiting_payment';
   return (
     <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #e2e8f0', mb: 3 }}>
@@ -245,6 +254,32 @@ function ActiveJobView({ request }: { request: InsuranceRequestDetail }) {
             <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
               {request.pricing.estimated_price} {request.pricing.currency}
             </Typography>
+          </Box>
+        )}
+        {isPayment && (
+          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e2e8f0' }}>
+            {smsSuccess ? (
+              <Alert severity="success" sx={{ borderRadius: 2 }}>
+                Odeme SMS'i basariyla gonderildi
+              </Alert>
+            ) : (
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={onSendPaymentSms}
+                disabled={sendingSms}
+                startIcon={sendingSms ? <CircularProgress size={18} color="inherit" /> : <Sms />}
+                sx={{
+                  bgcolor: '#0ea5e9',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  py: 1.2,
+                  '&:hover': { bgcolor: '#0284c7' },
+                }}
+              >
+                {sendingSms ? 'Gonderiliyor...' : 'Odeme SMS\'i Gonder'}
+              </Button>
+            )}
           </Box>
         )}
       </CardContent>
@@ -372,65 +407,84 @@ export default function RequestDetailPage() {
   const [accepting, setAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [sendingSms, setSendingSms] = useState(false);
+  const [smsSuccess, setSmsSuccess] = useState(false);
 
   const requestId = id ? Number(id) : null;
-  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // tracking token: from navigation state or parse from tracking_url
   const trackingToken = stateToken
     || (request?.tracking_url ? extractTrackingToken(request.tracking_url) : null);
 
-  const fetchData = useCallback(async () => {
-    if (!requestId) return;
+  // --- Data fetching ---
+
+  const fetchRequest = useCallback(async () => {
+    if (!requestId) return null;
     try {
       const reqData = await getInsuranceRequest(requestId);
       setRequest(reqData);
-
-      // Teklifleri cek (tracking token gerekli)
-      const token = stateToken || (reqData.tracking_url ? extractTrackingToken(reqData.tracking_url) : null);
-      if (token && ACTIVE_STATUSES.includes(reqData.status)) {
-        try {
-          const offersData: OffersResponse = await getRequestOffers(token);
-          setOffers(offersData.offers || []);
-        } catch {
-          // Teklifler yuklenemezse sessizce devam et
-        }
-      }
       setError('');
+      return reqData;
     } catch {
       setError('Talep bilgileri yuklenirken hata olustu');
-    } finally {
-      setLoading(false);
+      return null;
     }
-  }, [requestId, stateToken]);
+  }, [requestId]);
+
+  const fetchOffers = useCallback(async (token: string) => {
+    try {
+      const offersData: OffersResponse = await getRequestOffers(token);
+      setOffers(offersData.offers || []);
+    } catch {
+      // Teklifler yuklenemezse sessizce devam et
+    }
+  }, []);
 
   // Ilk yukleme
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Polling
-  useEffect(() => {
-    if (!requestId) return;
-
-    intervalRef.current = setInterval(() => {
-      if (request && !ACTIVE_STATUSES.includes(request.status)) {
-        clearInterval(intervalRef.current);
-        return;
+    const init = async () => {
+      setLoading(true);
+      const reqData = await fetchRequest();
+      if (reqData) {
+        const token = stateToken || (reqData.tracking_url ? extractTrackingToken(reqData.tracking_url) : null);
+        if (token && ACTIVE_STATUSES.includes(reqData.status)) {
+          await fetchOffers(token);
+        }
       }
-      fetchData();
-    }, POLL_INTERVAL);
+      setLoading(false);
+    };
+    init();
+  }, [fetchRequest, fetchOffers, stateToken]);
 
-    return () => clearInterval(intervalRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId, request?.status, fetchData]);
+  // --- WebSocket ---
+
+  const wsEnabled = !loading && !!trackingToken && !!request && !TERMINAL_STATUSES.includes(request.status);
+
+  const { isConnected } = useRequestWebSocket({
+    trackingToken,
+    enabled: wsEnabled,
+    onNewOffer: useCallback((offer: DriverOfferInfo) => {
+      setOffers(prev => {
+        if (prev.some(o => o.id === offer.id)) return prev;
+        return [...prev, offer];
+      });
+    }, []),
+    onOfferWithdrawn: useCallback((offerId: number) => {
+      setOffers(prev => prev.filter(o => o.id !== offerId));
+    }, []),
+    onStatusChange: useCallback(() => {
+      fetchRequest();
+    }, [fetchRequest]),
+  });
+
+  // --- Handlers ---
 
   const handleCancel = async () => {
     if (!requestId) return;
     setCancelling(true);
     try {
       await cancelInsuranceRequest(requestId);
-      await fetchData();
+      await fetchRequest();
       setCancelDialogOpen(false);
     } catch {
       setError('Talep iptal edilirken hata olustu');
@@ -445,7 +499,7 @@ export default function RequestDetailPage() {
     setAcceptError('');
     try {
       await acceptOfferApi(trackingToken, selectedOffer.id);
-      await fetchData();
+      await fetchRequest();
       setAcceptDialogOpen(false);
       setSelectedOffer(null);
     } catch (err: unknown) {
@@ -464,6 +518,20 @@ export default function RequestDetailPage() {
     setSelectedOffer(offer);
     setAcceptError('');
     setAcceptDialogOpen(true);
+  };
+
+  const handleSendPaymentSms = async () => {
+    if (!requestId) return;
+    setSendingSms(true);
+    try {
+      await sendPaymentSms(requestId);
+      setSmsSuccess(true);
+      setTimeout(() => setSmsSuccess(false), 5000);
+    } catch {
+      setError('SMS gonderilemedi');
+    } finally {
+      setSendingSms(false);
+    }
   };
 
   const copyTrackingUrl = () => {
@@ -512,6 +580,17 @@ export default function RequestDetailPage() {
           label={ServiceTypeLabels[request.service_type] || request.service_type}
           variant="outlined" sx={{ fontSize: 12, borderColor: '#e2e8f0', color: '#64748b' }}
         />
+        {wsEnabled && (
+          <Chip
+            label={isConnected ? 'Canli' : 'Baglaniyor...'}
+            size="small"
+            sx={{
+              fontSize: 10, height: 20,
+              bgcolor: isConnected ? '#dcfce7' : '#fef9c3',
+              color: isConnected ? '#16a34a' : '#ca8a04',
+            }}
+          />
+        )}
         {canCancel && (
           <Button
             variant="outlined" color="error" size="small"
@@ -527,7 +606,14 @@ export default function RequestDetailPage() {
       {request.status === 'awaiting_approval' && (
         <OffersView request={request} offers={offers} onAccept={openAcceptDialog} />
       )}
-      {(request.status === 'awaiting_payment' || request.status === 'in_progress') && <ActiveJobView request={request} />}
+      {(request.status === 'awaiting_payment' || request.status === 'in_progress') && (
+        <ActiveJobView
+          request={request}
+          onSendPaymentSms={handleSendPaymentSms}
+          sendingSms={sendingSms}
+          smsSuccess={smsSuccess}
+        />
+      )}
       {request.status === 'completed' && <CompletedView request={request} />}
       {request.status === 'cancelled' && <CancelledView />}
 

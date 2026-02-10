@@ -273,3 +273,14 @@ export const acceptOffer = async (trackingToken: string, offerId: number): Promi
   const response = await mainApi.post(`/requests/location/${trackingToken}/accept-offer/${offerId}/`);
   return response.data;
 };
+
+/**
+ * Odeme SMS'i gonder (backend henuz hazir degil - stub)
+ */
+export const sendPaymentSms = async (requestId: number): Promise<{ message: string }> => {
+  // TODO: Backend hazir oldugunda:
+  // const response = await insuranceApi.post(`/requests/${requestId}/send-payment-sms/`, {}, { headers: authHeader() });
+  // return response.data;
+  console.log('sendPaymentSms called for request:', requestId);
+  return new Promise((resolve) => setTimeout(() => resolve({ message: 'SMS gonderildi' }), 1500));
+};
