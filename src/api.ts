@@ -17,6 +17,8 @@ import {
   PricingEstimateResponse,
   OffersResponse,
   AcceptOfferResponse,
+  CreatePaymentLinkPayload,
+  CreatePaymentLinkResponse,
 } from './types';
 
 const API_BASE_URL = 'https://api.yolpaketi.com';
@@ -275,12 +277,16 @@ export const acceptOffer = async (trackingToken: string, offerId: number): Promi
 };
 
 /**
- * Odeme SMS'i gonder (backend henuz hazir degil - stub)
+ * iyzico odeme linki olustur ve musteriye SMS gonder
  */
-export const sendPaymentSms = async (requestId: number): Promise<{ message: string }> => {
-  // TODO: Backend hazir oldugunda:
-  // const response = await insuranceApi.post(`/requests/${requestId}/send-payment-sms/`, {}, { headers: authHeader() });
-  // return response.data;
-  console.log('sendPaymentSms called for request:', requestId);
-  return new Promise((resolve) => setTimeout(() => resolve({ message: 'SMS gonderildi' }), 1500));
+export const createPaymentLink = async (
+  requestId: number,
+  payload: CreatePaymentLinkPayload,
+): Promise<CreatePaymentLinkResponse> => {
+  const response = await insuranceApi.post(
+    `/requests/${requestId}/create-payment-link/`,
+    payload,
+    { headers: authHeader() },
+  );
+  return response.data;
 };

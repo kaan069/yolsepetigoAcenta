@@ -12,7 +12,7 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   getInsuranceRequest, getRequestOffers,
   cancelInsuranceRequest, acceptOffer as acceptOfferApi, extractTrackingToken,
-  sendPaymentSms,
+  createPaymentLink,
 } from '../../api';
 import { ServiceTypeLabels, RequestStatusLabels, RequestStatusColors } from '../../types';
 import type { InsuranceRequestDetail, DriverOfferInfo, OffersResponse } from '../../types';
@@ -260,7 +260,7 @@ function ActiveJobView({
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e2e8f0' }}>
             {smsSuccess ? (
               <Alert severity="success" sx={{ borderRadius: 2 }}>
-                Odeme SMS'i basariyla gonderildi
+                Odeme linki basariyla gonderildi
               </Alert>
             ) : (
               <Button
@@ -277,7 +277,7 @@ function ActiveJobView({
                   '&:hover': { bgcolor: '#0284c7' },
                 }}
               >
-                {sendingSms ? 'Gonderiliyor...' : 'Odeme SMS\'i Gonder'}
+                {sendingSms ? 'Gonderiliyor...' : 'Odeme Linki Gonder'}
               </Button>
             )}
           </Box>
@@ -468,7 +468,8 @@ export default function RequestDetailPage() {
         if (prev.some(o => o.id === offer.id)) return prev;
         return [...prev, offer];
       });
-    }, []),
+      fetchRequest();
+    }, [fetchRequest]),
     onOfferWithdrawn: useCallback((offerId: number) => {
       setOffers(prev => prev.filter(o => o.id !== offerId));
     }, []),
@@ -521,14 +522,16 @@ export default function RequestDetailPage() {
   };
 
   const handleSendPaymentSms = async () => {
-    if (!requestId) return;
+    if (!requestId || !request?.pricing?.estimated_price) return;
     setSendingSms(true);
     try {
-      await sendPaymentSms(requestId);
+      await createPaymentLink(requestId, {
+        price: parseFloat(request.pricing.estimated_price),
+      });
       setSmsSuccess(true);
       setTimeout(() => setSmsSuccess(false), 5000);
     } catch {
-      setError('SMS gonderilemedi');
+      setError('Odeme linki olusturulamadi');
     } finally {
       setSendingSms(false);
     }

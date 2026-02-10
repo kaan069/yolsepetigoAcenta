@@ -423,3 +423,21 @@ export interface PricingEstimateResponse {
     total: string;
   } | null;
 }
+
+// --- iyzico Odeme Linki ---
+
+export interface CreatePaymentLinkPayload {
+  price: number;
+  description?: string;
+}
+
+export interface CreatePaymentLinkResponse {
+  success: boolean;
+  message: string;
+  payment_link: {
+    id: number;
+    url: string;
+    amount: number;
+    sms_sent_to: string;
+  };
+}
