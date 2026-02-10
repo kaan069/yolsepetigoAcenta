@@ -542,7 +542,7 @@ export default function RequestDetailPage() {
     }
   };
 
-  const canCancel = request?.status === 'pending' || request?.status === 'awaiting_approval';
+  const canCancel = request?.status !== 'completed' && request?.status !== 'cancelled';
 
   if (loading) {
     return (
