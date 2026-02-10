@@ -475,7 +475,8 @@ export default function RequestDetailPage() {
     }, []),
     onStatusChange: useCallback(() => {
       fetchRequest();
-    }, [fetchRequest]),
+      if (trackingToken) fetchOffers(trackingToken);
+    }, [fetchRequest, fetchOffers, trackingToken]),
   });
 
   // --- Handlers ---

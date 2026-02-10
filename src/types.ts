@@ -343,15 +343,7 @@ export interface WsConnectionEstablished {
 export interface WsNewOffer {
   type: 'new_offer';
   request_id: number;
-  offer: {
-    id: number;
-    driver: { id: number; first_name: string; last_name: string; phone_number: string };
-    vehicle: { id: number; brand: string; model: string; plate_number: string } | null;
-    estimated_price: string;
-    estimated_duration: number;
-    status: string;
-    created_at: string;
-  };
+  offer: DriverOfferInfo;
   message: string;
 }
 

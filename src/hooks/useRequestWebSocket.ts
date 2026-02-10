@@ -1,31 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DriverOfferInfo, WsMessage, WsNewOffer } from '../types';
+import type { DriverOfferInfo, WsMessage } from '../types';
 
 const WS_BASE = 'wss://api.yolsepetigo.com/ws/requests';
 const MAX_RECONNECT_DELAY = 30000;
-
-function mapWsOfferToDriverOfferInfo(wsOffer: WsNewOffer['offer']): DriverOfferInfo {
-  return {
-    id: wsOffer.id,
-    driver_info: {
-      id: wsOffer.driver.id,
-      name: `${wsOffer.driver.first_name} ${wsOffer.driver.last_name}`,
-      phone: wsOffer.driver.phone_number,
-      average_rating: null,
-      total_ratings: 0,
-    },
-    vehicle_info: wsOffer.vehicle
-      ? { ...wsOffer.vehicle, vehicle_type: '' }
-      : null,
-    estimated_price: parseFloat(wsOffer.estimated_price),
-    driver_earnings: 0,
-    platform_commission: 0,
-    pricing_breakdown: {},
-    offer_details: {},
-    status: wsOffer.status as DriverOfferInfo['status'],
-    created_at: wsOffer.created_at,
-  };
-}
 
 interface UseRequestWebSocketOptions {
   trackingToken: string | null;
@@ -85,7 +62,7 @@ export function useRequestWebSocket(options: UseRequestWebSocketOptions) {
               cb.onStatusChange();
               break;
             case 'new_offer':
-              cb.onNewOffer(mapWsOfferToDriverOfferInfo(data.offer));
+              cb.onNewOffer(data.offer);
               break;
             case 'offer_withdrawn':
               cb.onOfferWithdrawn(data.offer_id);
