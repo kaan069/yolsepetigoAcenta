@@ -6,7 +6,7 @@ import {
 import { MyLocation, LocationOn, Close, Sms, CheckCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
-import { createInsuranceRequest, sendLocationSms } from '../../api';
+import { createInsuranceRequest, initLocationShare, sendLocationSms } from '../../api';
 import { ServiceType, ServiceTypeLabels } from '../../types';
 import type { ServiceTypeValue, InsuranceRequestCreatePayload } from '../../types';
 import MapPickerDialog, { type LocationResult } from '../../components/MapPickerDialog';
@@ -213,12 +213,12 @@ export default function NewRequestPage() {
 
   // Konum paylasimi
   const [locationSmsLoading, setLocationSmsLoading] = useState(false);
-  const [locationSessionId, setLocationSessionId] = useState<string | null>(null);
+  const [locationToken, setLocationToken] = useState<string | null>(null);
   const [locationReceived, setLocationReceived] = useState(false);
   const [locationSmsError, setLocationSmsError] = useState('');
 
   const { isWaiting: locationWaiting } = useLocationShareWebSocket({
-    sessionId: locationSessionId,
+    sessionId: locationToken,
     onLocationReceived: useCallback((loc: { latitude: number; longitude: number; address: string }) => {
       setForm(prev => ({
         ...prev,
@@ -227,7 +227,7 @@ export default function NewRequestPage() {
         pickup_longitude: loc.longitude,
       }));
       setLocationReceived(true);
-      setLocationSessionId(null);
+      setLocationToken(null);
     }, []),
   });
 
@@ -240,8 +240,15 @@ export default function NewRequestPage() {
     setLocationSmsError('');
     setLocationReceived(false);
     try {
-      const res = await sendLocationSms({ phone: form.insured_phone });
-      setLocationSessionId(res.session_id);
+      if (!locationToken) {
+        // Ilk kez: init + sms
+        const initRes = await initLocationShare({ insured_phone: form.insured_phone });
+        setLocationToken(initRes.token);
+        await sendLocationSms({ token: initRes.token });
+      } else {
+        // Tekrar gonder: sadece sms
+        await sendLocationSms({ token: locationToken });
+      }
     } catch {
       setLocationSmsError('SMS gonderilemedi');
     } finally {
@@ -377,27 +384,31 @@ export default function NewRequestPage() {
 
     setLoading(true);
     try {
-      const payload: InsuranceRequestCreatePayload = {
-        service_type: form.service_type,
-        insured_name: form.insured_name,
-        insured_phone: form.insured_phone,
-        policy_number: form.policy_number,
+      const serviceDetails: Record<string, unknown> = {
+        ...buildServiceDetails(form),
         pickup_address: form.pickup_address,
         pickup_latitude: form.pickup_latitude,
         pickup_longitude: form.pickup_longitude,
       };
 
-      if (form.insured_plate) payload.insured_plate = form.insured_plate;
-      if (form.insurance_name) payload.insurance_name = form.insurance_name;
-
       if (needsDropoff) {
-        if (form.dropoff_address) payload.dropoff_address = form.dropoff_address;
-        if (form.dropoff_latitude) payload.dropoff_latitude = form.dropoff_latitude;
-        if (form.dropoff_longitude) payload.dropoff_longitude = form.dropoff_longitude;
-        if (form.estimated_km > 0) payload.estimated_km = form.estimated_km;
+        if (form.dropoff_address) serviceDetails.dropoff_address = form.dropoff_address;
+        if (form.dropoff_latitude) serviceDetails.dropoff_latitude = form.dropoff_latitude;
+        if (form.dropoff_longitude) serviceDetails.dropoff_longitude = form.dropoff_longitude;
+        if (form.estimated_km > 0) serviceDetails.estimated_km = form.estimated_km;
       }
 
-      payload.service_details = buildServiceDetails(form);
+      const payload: InsuranceRequestCreatePayload = {
+        service_type: form.service_type,
+        insured_name: form.insured_name,
+        insured_phone: form.insured_phone,
+        policy_number: form.policy_number,
+        location_method: 'manual',
+        service_details: serviceDetails,
+      };
+
+      if (form.insured_plate) payload.insured_plate = form.insured_plate;
+      if (form.insurance_name) payload.insurance_name = form.insurance_name;
 
       const response = await createInsuranceRequest(payload);
       navigate(`/panel/requests/${response.request_id}`, {
@@ -621,10 +632,10 @@ export default function NewRequestPage() {
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>
               <TextField fullWidth label="Sigortali Adi *" value={form.insured_name} onChange={handleChange('insured_name')} />
+              <TextField fullWidth label="Sigorta Sirketi" value={form.insurance_name} onChange={handleChange('insurance_name')} placeholder="Orn: Axa, Allianz, Anadolu Sigorta" />
               <TextField fullWidth label="Sigortali Telefon *" value={form.insured_phone} onChange={handleChange('insured_phone')} />
               <TextField fullWidth label="Plaka" value={form.insured_plate} onChange={handleChange('insured_plate')} />
               <TextField fullWidth label="Police Numarasi *" value={form.policy_number} onChange={handleChange('policy_number')} />
-              <TextField fullWidth label="Sigorta Sirketi" value={form.insurance_name} onChange={handleChange('insurance_name')} placeholder="Orn: Axa, Allianz, Anadolu Sigorta" />
             </Box>
 
             <SectionLabel>Alis Konumu</SectionLabel>

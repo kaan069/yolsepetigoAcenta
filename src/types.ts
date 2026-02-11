@@ -227,14 +227,7 @@ export interface InsuranceRequestCreatePayload {
   policy_number: string;
   insurance_name?: string;
   external_reference?: string;
-  location_method?: 'manual' | 'customer_share';
-  pickup_address?: string;
-  pickup_latitude?: number;
-  pickup_longitude?: number;
-  dropoff_address?: string;
-  dropoff_latitude?: number;
-  dropoff_longitude?: number;
-  estimated_km?: number;
+  location_method?: 'manual' | null;
   service_details?: Record<string, unknown>;
 }
 
@@ -443,14 +436,24 @@ export interface CreatePaymentLinkResponse {
 
 // --- Konum Paylasimi ---
 
+export interface LocationShareInitPayload {
+  insured_phone: string;
+}
+
+export interface LocationShareInitResponse {
+  token: string;
+  share_url: string;
+  expires_at: string;
+  ws_url: string;
+}
+
 export interface SendLocationSmsPayload {
-  phone: string;
+  token: string;
 }
 
 export interface SendLocationSmsResponse {
   success: boolean;
   message: string;
-  session_id: string;
 }
 
 export interface WsLocationReceived {

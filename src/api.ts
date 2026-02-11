@@ -19,6 +19,8 @@ import {
   AcceptOfferResponse,
   CreatePaymentLinkPayload,
   CreatePaymentLinkResponse,
+  LocationShareInitPayload,
+  LocationShareInitResponse,
   SendLocationSmsPayload,
   SendLocationSmsResponse,
 } from './types';
@@ -290,6 +292,16 @@ export const createPaymentLink = async (
     payload,
     { headers: authHeader() },
   );
+  return response.data;
+};
+
+/**
+ * Konum paylasimi basla (token al)
+ */
+export const initLocationShare = async (payload: LocationShareInitPayload): Promise<LocationShareInitResponse> => {
+  const response = await insuranceApi.post('/location-share/init/', payload, {
+    headers: authHeader(),
+  });
   return response.data;
 };
 
