@@ -296,6 +296,17 @@ export const createPaymentLink = async (
 };
 
 /**
+ * Musteri konum paylasimi - GPS koordinatlarini gonder (public, auth yok)
+ */
+export const submitSharedLocation = async (
+  token: string,
+  coords: { latitude: number; longitude: number },
+): Promise<{ success: boolean; message: string }> => {
+  const response = await mainApi.post(`/location-share/${token}/submit/`, coords);
+  return response.data;
+};
+
+/**
  * Konum paylasimi basla (token al)
  */
 export const initLocationShare = async (payload: LocationShareInitPayload): Promise<LocationShareInitResponse> => {

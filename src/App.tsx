@@ -14,6 +14,7 @@ import RequestDetailPage from './pages/panel/RequestDetailPage';
 import NewRequestPage from './pages/panel/NewRequestPage';
 import PricingPage from './pages/panel/PricingPage';
 import SettingsPage from './pages/panel/SettingsPage';
+import LocationSharePage from './pages/public/LocationSharePage';
 
 function App() {
   return (
@@ -26,6 +27,9 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
           </Route>
+
+          {/* Konum paylasimi (musteri tarafi, layout yok) */}
+          <Route path="/l/:token" element={<LocationSharePage />} />
 
           {/* Auth */}
           <Route path="/panel/login" element={<LoginPage />} />
