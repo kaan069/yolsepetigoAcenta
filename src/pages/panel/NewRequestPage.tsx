@@ -214,11 +214,12 @@ export default function NewRequestPage() {
   // Konum paylasimi
   const [locationSmsLoading, setLocationSmsLoading] = useState(false);
   const [locationToken, setLocationToken] = useState<string | null>(null);
+  const [locationWsUrl, setLocationWsUrl] = useState<string | null>(null);
   const [locationReceived, setLocationReceived] = useState(false);
   const [locationSmsError, setLocationSmsError] = useState('');
 
   const { isWaiting: locationWaiting } = useLocationShareWebSocket({
-    sessionId: locationToken,
+    wsUrl: locationWsUrl,
     onLocationReceived: useCallback((loc: { latitude: number; longitude: number; address: string }) => {
       setForm(prev => ({
         ...prev,
@@ -227,7 +228,7 @@ export default function NewRequestPage() {
         pickup_longitude: loc.longitude,
       }));
       setLocationReceived(true);
-      setLocationToken(null);
+      setLocationWsUrl(null);
     }, []),
   });
 
@@ -244,6 +245,9 @@ export default function NewRequestPage() {
         // Ilk kez: init + sms
         const initRes = await initLocationShare({ insured_phone: form.insured_phone });
         setLocationToken(initRes.token);
+        // Backend relative ws_url donuyor, full URL olustur
+        const fullWsUrl = `wss://api.yolsepetigo.com/${initRes.ws_url}`;
+        setLocationWsUrl(fullWsUrl);
         await sendLocationSms({ token: initRes.token });
       } else {
         // Tekrar gonder: sadece sms
@@ -384,28 +388,24 @@ export default function NewRequestPage() {
 
     setLoading(true);
     try {
-      const serviceDetails: Record<string, unknown> = {
-        ...buildServiceDetails(form),
-        pickup_address: form.pickup_address,
-        pickup_latitude: form.pickup_latitude,
-        pickup_longitude: form.pickup_longitude,
-      };
-
-      if (needsDropoff) {
-        if (form.dropoff_address) serviceDetails.dropoff_address = form.dropoff_address;
-        if (form.dropoff_latitude) serviceDetails.dropoff_latitude = form.dropoff_latitude;
-        if (form.dropoff_longitude) serviceDetails.dropoff_longitude = form.dropoff_longitude;
-        if (form.estimated_km > 0) serviceDetails.estimated_km = form.estimated_km;
-      }
-
       const payload: InsuranceRequestCreatePayload = {
         service_type: form.service_type,
         insured_name: form.insured_name,
         insured_phone: form.insured_phone,
         policy_number: form.policy_number,
         location_method: 'manual',
-        service_details: serviceDetails,
+        pickup_address: form.pickup_address,
+        pickup_latitude: form.pickup_latitude,
+        pickup_longitude: form.pickup_longitude,
+        service_details: buildServiceDetails(form),
       };
+
+      if (needsDropoff) {
+        if (form.dropoff_address) payload.dropoff_address = form.dropoff_address;
+        if (form.dropoff_latitude) payload.dropoff_latitude = form.dropoff_latitude;
+        if (form.dropoff_longitude) payload.dropoff_longitude = form.dropoff_longitude;
+        if (form.estimated_km > 0) payload.estimated_km = form.estimated_km;
+      }
 
       if (form.insured_plate) payload.insured_plate = form.insured_plate;
       if (form.insurance_name) payload.insurance_name = form.insurance_name;

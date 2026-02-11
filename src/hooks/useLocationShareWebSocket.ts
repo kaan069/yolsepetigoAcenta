@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { WsLocationReceived } from '../types';
 
-const WS_BASE = 'wss://api.yolsepetigo.com/ws/location-share';
 const MAX_RECONNECT_DELAY = 15000;
 
 interface LocationResult {
@@ -11,7 +10,7 @@ interface LocationResult {
 }
 
 interface UseLocationShareWebSocketOptions {
-  sessionId: string | null;
+  wsUrl: string | null;
   onLocationReceived: (location: LocationResult) => void;
 }
 
@@ -29,7 +28,7 @@ export function useLocationShareWebSocket(options: UseLocationShareWebSocketOpti
   useEffect(() => {
     mountedRef.current = true;
 
-    if (!options.sessionId) {
+    if (!options.wsUrl) {
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
@@ -40,13 +39,13 @@ export function useLocationShareWebSocket(options: UseLocationShareWebSocketOpti
       return;
     }
 
-    const sessionId = options.sessionId;
+    const url = options.wsUrl;
     setIsWaiting(true);
 
     function connect() {
       if (!mountedRef.current) return;
 
-      const ws = new WebSocket(`${WS_BASE}/${sessionId}/`);
+      const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -81,7 +80,7 @@ export function useLocationShareWebSocket(options: UseLocationShareWebSocketOpti
         setIsConnected(false);
         wsRef.current = null;
         // Sadece hala bekliyorsak reconnect et
-        if (callbacksRef.current.sessionId) {
+        if (callbacksRef.current.wsUrl) {
           scheduleReconnect();
         }
       };
@@ -95,7 +94,7 @@ export function useLocationShareWebSocket(options: UseLocationShareWebSocketOpti
     function scheduleReconnect() {
       if (!mountedRef.current) return;
       reconnectTimeoutRef.current = setTimeout(() => {
-        if (mountedRef.current && callbacksRef.current.sessionId) {
+        if (mountedRef.current && callbacksRef.current.wsUrl) {
           connect();
         }
       }, reconnectDelayRef.current);
@@ -116,7 +115,7 @@ export function useLocationShareWebSocket(options: UseLocationShareWebSocketOpti
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.sessionId]);
+  }, [options.wsUrl]);
 
   return { isConnected, isWaiting };
 }

@@ -302,7 +302,7 @@ export const submitSharedLocation = async (
   token: string,
   coords: { latitude: number; longitude: number },
 ): Promise<{ success: boolean; message: string }> => {
-  const response = await mainApi.post(`/location-share/${token}/submit/`, coords);
+  const response = await mainApi.post(`/insurance/location-share/${token}/submit/`, coords);
   return response.data;
 };
 

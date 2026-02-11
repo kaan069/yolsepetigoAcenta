@@ -29,7 +29,7 @@ function App() {
           </Route>
 
           {/* Konum paylasimi (musteri tarafi, layout yok) */}
-          <Route path="/l/:token" element={<LocationSharePage />} />
+          <Route path="/konum-paylas/:token" element={<LocationSharePage />} />
 
           {/* Auth */}
           <Route path="/panel/login" element={<LoginPage />} />
