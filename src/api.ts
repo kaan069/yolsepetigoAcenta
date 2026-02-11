@@ -307,6 +307,16 @@ export const submitSharedLocation = async (
 };
 
 /**
+ * Konum paylasim token durumunu kontrol et (polling fallback)
+ */
+export const checkLocationShareStatus = async (
+  token: string,
+): Promise<{ is_used: boolean; latitude?: string; longitude?: string; address?: string }> => {
+  const response = await mainApi.get(`/insurance/location-share/${token}/status/`);
+  return response.data;
+};
+
+/**
  * Konum paylasimi basla (token al)
  */
 export const initLocationShare = async (payload: LocationShareInitPayload): Promise<LocationShareInitResponse> => {
