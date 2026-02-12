@@ -1,0 +1,137 @@
+import {
+  Box, Typography, Button, Alert, CircularProgress,
+} from '@mui/material';
+import { MyLocation, Sms, CheckCircle } from '@mui/icons-material';
+import MapPickerDialog, { type LocationResult } from '../../../components/MapPickerDialog';
+
+interface PickupSectionProps {
+  pickupAddress: string;
+  pickupLatitude: number;
+  pickupLongitude: number;
+  dialogOpen: boolean;
+  onDialogOpen: () => void;
+  onDialogClose: () => void;
+  onLocationSelect: (loc: LocationResult) => void;
+  // Musteri konum paylasimi
+  locationWaiting: boolean;
+  locationReceived: boolean;
+  locationSmsLoading: boolean;
+  locationSmsError: string;
+  insuredPhone: string;
+  onSendLocationSms: () => void;
+}
+
+export default function PickupSection({
+  pickupAddress, pickupLatitude, pickupLongitude,
+  dialogOpen, onDialogOpen, onDialogClose, onLocationSelect,
+  locationWaiting, locationReceived, locationSmsLoading, locationSmsError,
+  insuredPhone, onSendLocationSms,
+}: PickupSectionProps) {
+  return (
+    <>
+      <Box
+        onClick={onDialogOpen}
+        sx={{
+          mb: 2, p: 2, border: '1px solid',
+          borderColor: pickupAddress ? '#0ea5e9' : '#e2e8f0',
+          borderRadius: 2, cursor: 'pointer',
+          bgcolor: pickupAddress ? '#f0f9ff' : 'transparent',
+          display: 'flex', alignItems: 'flex-start', gap: 1.5,
+          transition: 'all 0.2s ease',
+          '&:hover': { borderColor: '#0ea5e9', bgcolor: '#f0f9ff' },
+        }}
+      >
+        <Box sx={{
+          width: 40, height: 40, borderRadius: 2, flexShrink: 0, mt: 0.25,
+          bgcolor: pickupAddress ? '#0ea5e9' : '#f1f5f9',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <MyLocation sx={{ color: pickupAddress ? 'white' : '#94a3b8', fontSize: 20 }} />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          {pickupAddress ? (
+            <>
+              <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.25 }}>
+                Alis Adresi
+              </Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#0f172a', lineHeight: 1.4 }}>
+                {pickupAddress}
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: '#94a3b8', mt: 0.5, fontFamily: 'monospace' }}>
+                {pickupLatitude.toFixed(4)}, {pickupLongitude.toFixed(4)}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography sx={{ fontSize: 14, color: '#94a3b8' }}>
+                Alis konumunu secmek icin tiklayin
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: '#cbd5e1', mt: 0.25 }}>
+                Haritadan konum secin veya adres arayin
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
+      <MapPickerDialog
+        open={dialogOpen}
+        onClose={onDialogClose}
+        onSelect={onLocationSelect}
+        initialLocation={
+          pickupLatitude !== 0
+            ? { address: pickupAddress, latitude: pickupLatitude, longitude: pickupLongitude }
+            : null
+        }
+        title="Alis Konumu Sec"
+      />
+
+      {/* Musteriden konum al */}
+      {locationWaiting ? (
+        <Box sx={{ mb: 2, p: 2, border: '1px solid #f59e0b', borderRadius: 2, bgcolor: '#fffbeb' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+            <CircularProgress size={18} sx={{ color: '#f59e0b' }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#92400e' }}>
+              Musteri konumu bekleniyor...
+            </Typography>
+          </Box>
+          <Typography sx={{ fontSize: 12, color: '#a16207' }}>
+            {insuredPhone} numarasina SMS gonderildi
+          </Typography>
+          <Button
+            size="small" variant="text"
+            onClick={onSendLocationSms}
+            disabled={locationSmsLoading}
+            sx={{ mt: 1, fontSize: 12, color: '#92400e', fontWeight: 600 }}
+          >
+            Tekrar Gonder
+          </Button>
+        </Box>
+      ) : locationReceived ? (
+        <Box sx={{ mb: 2, p: 2, border: '1px solid #10b981', borderRadius: 2, bgcolor: '#ecfdf5' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CheckCircle sx={{ fontSize: 18, color: '#10b981' }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#065f46' }}>
+              Musteri konumu alindi
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={{ mb: 2 }}>
+          {locationSmsError && (
+            <Alert severity="error" sx={{ mb: 1, borderRadius: 2 }}>{locationSmsError}</Alert>
+          )}
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onSendLocationSms}
+            disabled={locationSmsLoading}
+            startIcon={locationSmsLoading ? <CircularProgress size={16} /> : <Sms />}
+            sx={{ borderColor: '#e2e8f0', color: '#64748b', fontWeight: 600, borderRadius: 2 }}
+          >
+            {locationSmsLoading ? 'Gonderiliyor...' : 'Musteriden Konum Al'}
+          </Button>
+        </Box>
+      )}
+    </>
+  );
+}

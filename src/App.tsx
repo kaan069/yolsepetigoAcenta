@@ -10,7 +10,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/panel/DashboardPage';
 import RequestsPage from './pages/panel/RequestsPage';
 import RequestDetailPage from './pages/panel/RequestDetailPage';
-import NewRequestPage from './pages/panel/NewRequestPage';
+import NewRequestPage from './pages/panel/NewRequest';
 import PricingPage from './pages/panel/PricingPage';
 import SettingsPage from './pages/panel/SettingsPage';
 import LocationSharePage from './pages/public/LocationSharePage';

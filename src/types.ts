@@ -224,7 +224,7 @@ export interface InsuranceRequestCreatePayload {
   insured_name: string;
   insured_phone: string;
   insured_plate?: string;
-  policy_number: string;
+  policy_number?: string;
   insurance_name?: string;
   external_reference?: string;
   location_method?: 'manual' | 'customer_share';
