@@ -23,6 +23,7 @@ import {
   LocationShareInitResponse,
   SendLocationSmsPayload,
   SendLocationSmsResponse,
+  PricingQuestionsResponse,
 } from './types';
 
 const API_BASE_URL = 'https://api.yolpaketi.com';
@@ -333,6 +334,11 @@ export const sendLocationSms = async (payload: SendLocationSmsPayload): Promise<
   const response = await insuranceApi.post('/location-share/send-sms/', payload, {
     headers: authHeader(),
   });
+  return response.data;
+};
+
+export const getPricingQuestions = async (): Promise<PricingQuestionsResponse> => {
+  const response = await mainApi.get('/pricing/questions/');
   return response.data;
 };
 

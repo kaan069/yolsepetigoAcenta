@@ -236,6 +236,7 @@ export interface InsuranceRequestCreatePayload {
   dropoff_longitude?: number;
   estimated_km?: number;
   service_details?: Record<string, unknown>;
+  question_answers?: { question_id: number; selected_options: number[] }[];
 }
 
 export interface InsuranceRequestCreateResponse {
@@ -468,4 +469,26 @@ export interface WsLocationReceived {
   latitude: string;
   longitude: string;
   address: string;
+}
+
+// --- Fiyatlandirma Sorulari ---
+
+export interface PricingQuestionOption {
+  id: number;
+  option_text: string;
+  surcharge_amount: string;
+  order: number;
+}
+
+export interface PricingQuestion {
+  id: number;
+  question_text: string;
+  question_type: 'single_choice' | 'multiple_choice';
+  order: number;
+  options: PricingQuestionOption[];
+}
+
+export interface PricingQuestionsResponse {
+  count: number;
+  questions: PricingQuestion[];
 }

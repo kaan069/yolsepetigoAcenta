@@ -339,8 +339,8 @@ function InfoItem({ label, value }: { label: string; value: string | null | unde
 
 // --- RequestInfoCard ---
 
-function RequestInfoCard({ request, copied, onCopy }: {
-  request: InsuranceRequestDetail; copied: boolean; onCopy: () => void;
+function RequestInfoCard({ request, copied, onCopy, trackingToken }: {
+  request: InsuranceRequestDetail; copied: boolean; onCopy: () => void; trackingToken: string | null;
 }) {
   return (
     <>
@@ -381,6 +381,21 @@ function RequestInfoCard({ request, copied, onCopy }: {
                 <ContentCopy sx={{ fontSize: 16 }} />
               </IconButton>
             </Tooltip>
+            {trackingToken && (
+              <Button
+                variant="contained"
+                size="small"
+                href={`https://yolsepetigo.com/?live=${trackingToken}`}
+                target="_blank"
+                sx={{
+                  bgcolor: '#0ea5e9', fontWeight: 600, fontSize: 12, borderRadius: 2,
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  '&:hover': { bgcolor: '#0284c7' },
+                }}
+              >
+                Canli Takip
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -623,7 +638,7 @@ export default function RequestDetailPage() {
       {request.status === 'completed' && <CompletedView request={request} />}
       {request.status === 'cancelled' && <CancelledView />}
 
-      <RequestInfoCard request={request} copied={copied} onCopy={copyTrackingUrl} />
+      <RequestInfoCard request={request} copied={copied} onCopy={copyTrackingUrl} trackingToken={trackingToken} />
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)} PaperProps={{ sx: { borderRadius: 3 } }}>

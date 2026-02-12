@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Card, CardContent, Box, TextField, Button, Alert, MenuItem,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { createInsuranceRequest, initLocationShare, sendLocationSms } from '../../../api';
+import { createInsuranceRequest, initLocationShare, sendLocationSms, getPricingQuestions } from '../../../api';
 import { ServiceType } from '../../../types';
-import type { ServiceTypeValue, InsuranceRequestCreatePayload } from '../../../types';
+import type { ServiceTypeValue, InsuranceRequestCreatePayload, PricingQuestion } from '../../../types';
 import { useLocationShareWebSocket } from '../../../hooks/useLocationShareWebSocket';
 import type { RequestFormState } from './types';
 import { initialFormState } from './types';
@@ -15,6 +15,7 @@ import SectionLabel from './SectionLabel';
 import ServiceFields from './ServiceFields';
 import PickupSection from './PickupSection';
 import DropoffSection from './DropoffSection';
+import PricingQuestions from './PricingQuestions';
 import type { LocationResult } from '../../../components/MapPickerDialog';
 
 export default function NewRequestPage() {
@@ -25,6 +26,33 @@ export default function NewRequestPage() {
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
   const [dropoffDialogOpen, setDropoffDialogOpen] = useState(false);
   const [distanceLoading, setDistanceLoading] = useState(false);
+
+  // Fiyatlandirma sorulari
+  const [pricingQuestions, setPricingQuestions] = useState<PricingQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<number, number[]>>({});
+
+  useEffect(() => {
+    setQuestionsLoading(true);
+    getPricingQuestions()
+      .then((res) => setPricingQuestions(res.questions))
+      .catch(() => {})
+      .finally(() => setQuestionsLoading(false));
+  }, []);
+
+  const handleQuestionAnswer = (questionId: number, optionId: number, questionType: PricingQuestion['question_type']) => {
+    setQuestionAnswers((prev) => {
+      if (questionType === 'single_choice') {
+        return { ...prev, [questionId]: [optionId] };
+      }
+      const current = prev[questionId] || [];
+      const exists = current.includes(optionId);
+      return {
+        ...prev,
+        [questionId]: exists ? current.filter((id) => id !== optionId) : [...current, optionId],
+      };
+    });
+  };
 
   // Konum paylasimi
   const [locationSmsLoading, setLocationSmsLoading] = useState(false);
@@ -221,6 +249,12 @@ export default function NewRequestPage() {
       if (form.policy_number) payload.policy_number = form.policy_number;
       if (form.insurance_name) payload.insurance_name = form.insurance_name;
 
+      // Fiyatlandirma soru cevaplari
+      const answersArray = Object.entries(questionAnswers)
+        .filter(([, opts]) => opts.length > 0)
+        .map(([qId, opts]) => ({ question_id: Number(qId), selected_options: opts }));
+      if (answersArray.length > 0) payload.question_answers = answersArray;
+
       const response = await createInsuranceRequest(payload);
       navigate(`/panel/requests/${response.request_id}`, {
         state: { trackingToken: response.tracking_token },
@@ -313,6 +347,15 @@ export default function NewRequestPage() {
               onCheckboxChange={handleCheckboxChange}
               onToggleProblemType={toggleProblemType}
             />
+
+            {form.service_type === ServiceType.TowTruck && (
+              <PricingQuestions
+                questions={pricingQuestions}
+                loading={questionsLoading}
+                answers={questionAnswers}
+                onChange={handleQuestionAnswer}
+              />
+            )}
 
             <Button fullWidth type="submit" variant="contained" size="large" disabled={loading} sx={{ mt: 1 }}>
               {loading ? 'Olusturuluyor...' : 'Talep Olustur'}
