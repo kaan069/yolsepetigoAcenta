@@ -236,7 +236,6 @@ export interface InsuranceRequestCreatePayload {
   dropoff_longitude?: number;
   estimated_km?: number;
   service_details?: Record<string, unknown>;
-  question_answers?: { question_id: number; selected_options: number[] }[];
 }
 
 export interface InsuranceRequestCreateResponse {
@@ -483,7 +482,7 @@ export interface PricingQuestionOption {
 export interface PricingQuestion {
   id: number;
   question_text: string;
-  question_type: 'single_choice' | 'multiple_choice';
+  question_type: 'single_choice' | 'multiple_choice' | 'boolean';
   order: number;
   options: PricingQuestionOption[];
 }

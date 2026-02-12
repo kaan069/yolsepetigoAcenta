@@ -32,10 +32,10 @@ export default function PricingQuestions({ questions, loading, answers, onChange
             {q.question_text}
           </Typography>
 
-          {q.question_type === 'single_choice' ? (
+          {(q.question_type === 'single_choice' || q.question_type === 'boolean') ? (
             <RadioGroup
               value={answers[q.id]?.[0] ?? ''}
-              onChange={(_e, val) => onChange(q.id, Number(val), 'single_choice')}
+              onChange={(_e, val) => onChange(q.id, Number(val), q.question_type)}
             >
               {q.options.map((opt) => (
                 <FormControlLabel

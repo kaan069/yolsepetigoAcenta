@@ -42,7 +42,7 @@ export default function NewRequestPage() {
 
   const handleQuestionAnswer = (questionId: number, optionId: number, questionType: PricingQuestion['question_type']) => {
     setQuestionAnswers((prev) => {
-      if (questionType === 'single_choice') {
+      if (questionType === 'single_choice' || questionType === 'boolean') {
         return { ...prev, [questionId]: [optionId] };
       }
       const current = prev[questionId] || [];
@@ -238,6 +238,14 @@ export default function NewRequestPage() {
         service_details: buildServiceDetails(form),
       };
 
+      // Fiyatlandirma soru cevaplarini service_details icine ekle
+      const answersArray = Object.entries(questionAnswers)
+        .filter(([, opts]) => opts.length > 0)
+        .map(([qId, opts]) => ({ question_id: Number(qId), option_ids: opts }));
+      if (answersArray.length > 0) {
+        payload.service_details = { ...payload.service_details, question_answers: answersArray };
+      }
+
       if (needsDropoff) {
         if (form.dropoff_address) payload.dropoff_address = form.dropoff_address;
         if (form.dropoff_latitude) payload.dropoff_latitude = parseFloat(form.dropoff_latitude.toFixed(6));
@@ -248,12 +256,6 @@ export default function NewRequestPage() {
       if (form.insured_plate) payload.insured_plate = form.insured_plate;
       if (form.policy_number) payload.policy_number = form.policy_number;
       if (form.insurance_name) payload.insurance_name = form.insurance_name;
-
-      // Fiyatlandirma soru cevaplari
-      const answersArray = Object.entries(questionAnswers)
-        .filter(([, opts]) => opts.length > 0)
-        .map(([qId, opts]) => ({ question_id: Number(qId), selected_options: opts }));
-      if (answersArray.length > 0) payload.question_answers = answersArray;
 
       const response = await createInsuranceRequest(payload);
       navigate(`/panel/requests/${response.request_id}`, {
