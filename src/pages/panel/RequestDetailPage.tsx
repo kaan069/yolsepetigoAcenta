@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Card, CardContent, Box, CircularProgress, Alert,
   Chip, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  IconButton, Tooltip, keyframes,
+  keyframes,
 } from '@mui/material';
 import {
-  ArrowBack, ContentCopy, Person, Schedule, LocalShipping,
+  ArrowBack, Person, Schedule, LocalShipping,
   Star, CheckCircle, Cancel, Phone, Sms,
 } from '@mui/icons-material';
 import { useParams, Link, useLocation } from 'react-router-dom';
@@ -339,8 +339,8 @@ function InfoItem({ label, value }: { label: string; value: string | null | unde
 
 // --- RequestInfoCard ---
 
-function RequestInfoCard({ request, copied, onCopy, trackingToken }: {
-  request: InsuranceRequestDetail; copied: boolean; onCopy: () => void; trackingToken: string | null;
+function RequestInfoCard({ request, trackingToken }: {
+  request: InsuranceRequestDetail; trackingToken: string | null;
 }) {
   return (
     <>
@@ -367,35 +367,22 @@ function RequestInfoCard({ request, copied, onCopy, trackingToken }: {
           <InfoItem label="Tamamlanma" value={formatDate(request.timeline.completed_at)} />
         </CardContent>
       </Card>
-      {request.tracking_url && (
+      {trackingToken && (
         <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #e2e8f0' }}>
-          <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2, '&:last-child': { pb: 2 } }}>
-            <Typography sx={{ fontSize: 13, color: '#94a3b8', fontWeight: 500, flexShrink: 0 }}>Takip:</Typography>
-            <Box sx={{ flex: 1, bgcolor: '#f8fafc', borderRadius: 1.5, px: 2, py: 0.75, overflow: 'hidden' }}>
-              <Typography sx={{ fontFamily: 'monospace', fontSize: 12, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {request.tracking_url}
-              </Typography>
-            </Box>
-            <Tooltip title={copied ? 'Kopyalandi!' : 'Kopyala'}>
-              <IconButton size="small" onClick={onCopy} sx={{ color: '#64748b' }}>
-                <ContentCopy sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-            {trackingToken && (
-              <Button
-                variant="contained"
-                size="small"
-                href={`https://yolsepetigo.com/?live=${trackingToken}`}
-                target="_blank"
-                sx={{
-                  bgcolor: '#0ea5e9', fontWeight: 600, fontSize: 12, borderRadius: 2,
-                  whiteSpace: 'nowrap', flexShrink: 0,
-                  '&:hover': { bgcolor: '#0284c7' },
-                }}
-              >
-                Canli Takip
-              </Button>
-            )}
+          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, '&:last-child': { pb: 2 } }}>
+            <Button
+              variant="contained"
+              fullWidth
+              href={`https://yolsepetigo.com/?live=${trackingToken}`}
+              target="_blank"
+              sx={{
+                bgcolor: '#0ea5e9', fontWeight: 600, fontSize: 14, borderRadius: 2,
+                py: 1.2,
+                '&:hover': { bgcolor: '#0284c7' },
+              }}
+            >
+              Canli Takip
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -421,7 +408,6 @@ export default function RequestDetailPage() {
   const [selectedOffer, setSelectedOffer] = useState<DriverOfferInfo | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState('');
-  const [copied, setCopied] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
   const [smsSuccess, setSmsSuccess] = useState(false);
 
@@ -553,13 +539,6 @@ export default function RequestDetailPage() {
     }
   };
 
-  const copyTrackingUrl = () => {
-    if (request?.tracking_url) {
-      navigator.clipboard.writeText(request.tracking_url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const canCancel = request?.status !== 'completed' && request?.status !== 'cancelled';
 
@@ -638,7 +617,7 @@ export default function RequestDetailPage() {
       {request.status === 'completed' && <CompletedView request={request} />}
       {request.status === 'cancelled' && <CancelledView />}
 
-      <RequestInfoCard request={request} copied={copied} onCopy={copyTrackingUrl} trackingToken={trackingToken} />
+      <RequestInfoCard request={request} trackingToken={trackingToken} />
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)} PaperProps={{ sx: { borderRadius: 3 } }}>

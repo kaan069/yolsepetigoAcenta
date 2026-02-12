@@ -88,20 +88,31 @@ export default function PickupSection({
       {/* Musteriden konum al */}
       {locationWaiting ? (
         <Box sx={{ mb: 2, p: 2, border: '1px solid #f59e0b', borderRadius: 2, bgcolor: '#fffbeb' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
             <CircularProgress size={18} sx={{ color: '#f59e0b' }} />
             <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#92400e' }}>
               Musteri konumu bekleniyor...
             </Typography>
           </Box>
-          <Typography sx={{ fontSize: 12, color: '#a16207' }}>
+          <Typography sx={{ fontSize: 12, color: '#a16207', mb: 1.5 }}>
             {insuredPhone} numarasina SMS gonderildi
           </Typography>
+          <Box sx={{ bgcolor: '#fef3c7', borderRadius: 1.5, p: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#92400e', mb: 0.5 }}>
+              Musteriyi yonlendirin:
+            </Typography>
+            <Typography component="ul" sx={{ fontSize: 12, color: '#a16207', m: 0, pl: 2, lineHeight: 1.8 }}>
+              <li>SMS ile gelen linki acmasini isteyin</li>
+              <li>Acilan sayfada "Konumumu Paylas" butonuna basmasini soyleyIn</li>
+              <li>Tarayicinin konum izni istediginde "Izin Ver" demesini belirtin</li>
+              <li>Konum basariyla paylasildIginda bu alan otomatik guncellenecektir</li>
+            </Typography>
+          </Box>
           <Button
             size="small" variant="text"
             onClick={onSendLocationSms}
             disabled={locationSmsLoading}
-            sx={{ mt: 1, fontSize: 12, color: '#92400e', fontWeight: 600 }}
+            sx={{ fontSize: 12, color: '#92400e', fontWeight: 600 }}
           >
             Tekrar Gonder
           </Button>
