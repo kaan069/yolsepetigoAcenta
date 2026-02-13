@@ -24,6 +24,7 @@ import {
   SendLocationSmsPayload,
   SendLocationSmsResponse,
   PricingQuestionsResponse,
+  InvoiceResponse,
 } from './types';
 
 const API_BASE_URL = 'https://api.yolpaketi.com';
@@ -339,6 +340,13 @@ export const sendLocationSms = async (payload: SendLocationSmsPayload): Promise<
 
 export const getPricingQuestions = async (): Promise<PricingQuestionsResponse> => {
   const response = await mainApi.get('/pricing/questions/');
+  return response.data;
+};
+
+export const getInvoice = async (requestId: number): Promise<InvoiceResponse> => {
+  const response = await insuranceApi.get(`/requests/${requestId}/invoice/`, {
+    headers: authHeader(),
+  });
   return response.data;
 };
 

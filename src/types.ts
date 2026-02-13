@@ -226,7 +226,6 @@ export interface InsuranceRequestCreatePayload {
   insured_plate?: string;
   policy_number?: string;
   insurance_name?: string;
-  external_reference?: string;
   location_method?: 'manual' | 'customer_share';
   pickup_address: string;
   pickup_latitude: number;
@@ -272,6 +271,7 @@ export interface InsuranceRequestDetail {
   insured_phone: string;
   insured_plate: string | null;
   policy_number: string;
+  insurance_name: string | null;
   tracking_url: string;
   driver: {
     name: string | null;
@@ -490,4 +490,12 @@ export interface PricingQuestion {
 export interface PricingQuestionsResponse {
   count: number;
   questions: PricingQuestion[];
+}
+
+// --- Fatura ---
+
+export interface InvoiceResponse {
+  status: 'ready' | 'processing' | 'no_payment';
+  pdf_url?: string;
+  message?: string;
 }

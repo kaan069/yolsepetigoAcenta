@@ -6,13 +6,13 @@ import {
 } from '@mui/material';
 import {
   ArrowBack, Person, Schedule, LocalShipping,
-  Star, CheckCircle, Cancel, Phone, Sms,
+  Star, CheckCircle, Cancel, Phone, Sms, Receipt,
 } from '@mui/icons-material';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   getInsuranceRequest, getRequestOffers,
   cancelInsuranceRequest, acceptOffer as acceptOfferApi, extractTrackingToken,
-  createPaymentLink,
+  createPaymentLink, getInvoice,
 } from '../../api';
 import { ServiceTypeLabels, RequestStatusLabels, RequestStatusColors } from '../../types';
 import type { InsuranceRequestDetail, DriverOfferInfo, OffersResponse } from '../../types';
@@ -289,7 +289,11 @@ function ActiveJobView({
 
 // --- CompletedView ---
 
-function CompletedView({ request }: { request: InsuranceRequestDetail }) {
+function CompletedView({ request, onViewInvoice, invoiceLoading }: {
+  request: InsuranceRequestDetail;
+  onViewInvoice: () => void;
+  invoiceLoading: boolean;
+}) {
   return (
     <Card sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid #d1fae5', bgcolor: '#f0fdf4', mb: 3 }}>
       <CardContent sx={{ p: 3, textAlign: 'center' }}>
@@ -303,10 +307,22 @@ function CompletedView({ request }: { request: InsuranceRequestDetail }) {
           </Box>
         )}
         {request.pricing?.estimated_price && (
-          <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>
+          <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#0f172a', mb: 2 }}>
             {request.pricing.estimated_price} {request.pricing.currency}
           </Typography>
         )}
+        <Button
+          variant="outlined"
+          onClick={onViewInvoice}
+          disabled={invoiceLoading}
+          startIcon={invoiceLoading ? <CircularProgress size={16} color="inherit" /> : <Receipt />}
+          sx={{
+            borderColor: '#10b981', color: '#10b981', fontWeight: 600, borderRadius: 2,
+            '&:hover': { borderColor: '#059669', bgcolor: '#ecfdf5' },
+          }}
+        >
+          {invoiceLoading ? 'Yukleniyor...' : 'Faturayi Gor'}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -354,6 +370,7 @@ function RequestInfoCard({ request, trackingToken }: {
             <InfoItem label="Telefon" value={request.insured_phone} />
             <InfoItem label="Plaka" value={request.insured_plate} />
             <InfoItem label="Police No" value={request.policy_number} />
+            <InfoItem label="Sigorta Sirketi" value={request.insurance_name} />
           </Box>
         </CardContent>
       </Card>
@@ -410,6 +427,7 @@ export default function RequestDetailPage() {
   const [acceptError, setAcceptError] = useState('');
   const [sendingSms, setSendingSms] = useState(false);
   const [smsSuccess, setSmsSuccess] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   const requestId = id ? Number(id) : null;
 
@@ -539,6 +557,24 @@ export default function RequestDetailPage() {
     }
   };
 
+  const handleViewInvoice = async () => {
+    if (!requestId) return;
+    setInvoiceLoading(true);
+    try {
+      const res = await getInvoice(requestId);
+      if (res.status === 'ready' && res.pdf_url) {
+        window.open(res.pdf_url, '_blank');
+      } else if (res.status === 'processing') {
+        setError('Faturaniz hazirlaniyor, lutfen biraz sonra tekrar deneyin');
+      } else if (res.status === 'no_payment') {
+        setError('Odeme bulunamadi');
+      }
+    } catch {
+      setError('Fatura yuklenirken hata olustu');
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
 
   const canCancel = request?.status !== 'completed' && request?.status !== 'cancelled';
 
@@ -614,7 +650,7 @@ export default function RequestDetailPage() {
           smsSuccess={smsSuccess}
         />
       )}
-      {request.status === 'completed' && <CompletedView request={request} />}
+      {request.status === 'completed' && <CompletedView request={request} onViewInvoice={handleViewInvoice} invoiceLoading={invoiceLoading} />}
       {request.status === 'cancelled' && <CancelledView />}
 
       <RequestInfoCard request={request} trackingToken={trackingToken} />
