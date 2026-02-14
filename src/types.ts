@@ -207,6 +207,7 @@ export interface CompanyProfile {
     is_active: boolean;
     approved_at: string | null;
     created_at: string;
+    commission_rate: number;
   };
   statistics: {
     total_requests: number;

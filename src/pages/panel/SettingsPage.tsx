@@ -127,6 +127,7 @@ export default function SettingsPage() {
               </Box>
               <InfoRow label="Kayit Tarihi" value={profile.status.created_at ? new Date(profile.status.created_at).toLocaleDateString('tr-TR') : null} />
               <InfoRow label="Onay Tarihi" value={profile.status.approved_at ? new Date(profile.status.approved_at).toLocaleDateString('tr-TR') : null} />
+              <InfoRow label="Komisyon Orani" value={`%${profile.status.commission_rate}`} />
             </CardContent>
           </Card>
 
